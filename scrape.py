@@ -136,12 +136,12 @@ def df_to_json(df):
                 .to_dict(orient='records')
             continue
         j_user.append(user_dict)
-    return {'user': j_user, 'week': None}
+    return {'users': j_user, 'weeks': None}
 
 
 def save_json(json_dict):
-    j_user = json_dict['user']
-    # j_week = json_dict['week']
+    j_user = json_dict['users']
+    # j_week = json_dict['weeks']
 
     with open('rosters_by_user.json', 'w') as f:
         f.write(j_user)
