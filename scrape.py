@@ -126,13 +126,13 @@ def df_to_json(df):
         user_dict = {}
         user_dict['user'] = user
         user_dict['total_score'] = data_user.user_score.values[0]
-        user_dict['weekly'] = {}
+        # user_dict['weekly'] = {}
 
         for week, data_week in data_user.groupby('week'):
-            user_dict['weekly'][week] = {}
-            user_dict['weekly'][week]['week_score'] = data_week['week_score']\
+            user_dict[week] = {}
+            user_dict[week]['week_score'] = data_week['week_score']\
                 .values[0]
-            user_dict['weekly'][week]['roster'] = data_week[player_columns]\
+            user_dict[week]['roster'] = data_week[player_columns]\
                 .to_dict(orient='records')
             continue
         j_user.append(user_dict)
