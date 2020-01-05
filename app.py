@@ -24,7 +24,7 @@ def respond():
 
     all_teams = pagify_scrape_group(group_id)
 
-    if len(all_teams)==0:
+    if len(all_teams) == 0:
         response["ERROR"] = "No teams found for that group"
         return jsonify(response)
     # create sorted list of users and their urls
@@ -62,6 +62,8 @@ def respond():
 def index():
     return "<h1>Welcome to our server !!</h1>"
 
+
 if __name__ == '__main__':
-    # Threaded option to enable multiple instances for multiple user access support
+    # Threaded option to enable multiple instances
+    # for multiple user access support
     app.run(threaded=True, port=5000)
