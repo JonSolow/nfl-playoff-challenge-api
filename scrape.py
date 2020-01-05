@@ -82,7 +82,7 @@ def parse_roster(team):
             if slot.find('span', class_='first-name') else ''
 
         score = slot.find('span', class_="display pts player-pts").em.text \
-            if slot.find('span', class_="display pts player-pts") else np.nan
+            if slot.find('span', class_="display pts player-pts") else None
 
         # player_img = slot.find('img', class_='player-img').attrs.get('src')
 
@@ -145,7 +145,7 @@ def main():
         all_rosters = p.map(parse_roster, teams_sorted)
 
     # import pdb; pdb.set_trace()
-    # conver to pandas and save to csv
+    # convert to pandas and save to csv
     flat_all_rosters = [item for sublist in all_rosters for item in sublist]
     df_all_rosters = pd.DataFrame(flat_all_rosters)
 
