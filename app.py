@@ -1,14 +1,12 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-from scrape import pagify_scrape_group, parse_roster
-import multiprocessing
+from scrape import pagify_scrape_group
+from scrape import df_to_json, convert_group_teams_to_df
 
-import pandas as pd
 
 app = Flask(__name__)
 # cors = CORS(app, resources={r"/api/": {"origins": r"https://playoffchallengefrontend.herokuapp.com/*"}})
 cors = CORS(app, resources={r"/api/": {"origins": r"*"}})
-
 
 
 @app.route('/api/', methods=['GET'])
@@ -31,31 +29,11 @@ def respond():
     if len(all_teams) == 0:
         response["ERROR"] = "No teams found for that group"
         return jsonify(response)
-    # create sorted list of users and their urls
-    team_names = [x.a.text.replace("'s picks", "").lower() for x in all_teams]
-    team_links = [x.a.attrs['href'] for x in all_teams]
-    teams_sorted = sorted(list(zip(team_names, team_links)))
 
-    # create list of all rosters
-    all_rosters = []
+    df_all_rosters = convert_group_teams_to_df(all_teams)
+    json_rosters = df_to_json(df_all_rosters)
 
-    with multiprocessing.Pool() as p:
-        all_rosters = p.map(parse_roster, teams_sorted)
-
-    # conver to pandas and save to csv
-    flat_all_rosters = [item for sublist in all_rosters for item in sublist]
-    df_all_rosters = pd.DataFrame(flat_all_rosters)
-
-    group_by_columns = ['user', 'week']
-    remaining_columns = list(set(df_all_rosters.columns) -
-                             set(group_by_columns))
-
-    j = (df_all_rosters.groupby(group_by_columns)
-         .apply(lambda x: x[remaining_columns].to_dict(orient='records')))
-
-    j_user = j.unstack('user').to_dict()
-    j_week = j.unstack('week').to_dict()
-    response['response'] = {'user': j_user, 'week': j_week}
+    response['response'] = json_rosters
 
     # Return the response in json format
     return jsonify(response)

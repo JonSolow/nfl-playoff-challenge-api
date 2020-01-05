@@ -2,8 +2,10 @@ from bs4 import BeautifulSoup
 import requests
 import argparse
 import time
+import json
 
 import pandas as pd
+import numpy as np
 import multiprocessing
 
 TEAM_DICTIONARY = {None: None,
@@ -14,6 +16,18 @@ TEAM_DICTIONARY = {None: None,
                    '12': 'Tennessee Titans',
                    '3': 'Buffalo Bills',
                    }
+
+
+class NpEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        elif isinstance(obj, np.floating):
+            return float(obj)
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        else:
+            return super(NpEncoder, self).default(obj)
 
 
 def scrape_teams_group_page(url):
@@ -111,27 +125,60 @@ def parse_roster(team):
     return roster_parsed
 
 
-def save_json(df):
+def df_to_json(df):
+    # make scores int
+    df['score'] = df['score'].apply(int)
+    df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
+    df['user_score'] = df.groupby('user').score.transform(sum)
 
-    group_by_columns = ['user', 'week']
-    remaining_columns = list(set(df.columns) - set(group_by_columns))
+    player_columns = ['player_name', 'position', 'roster_slot',
+                      'multiplier', 'team', 'score']
 
-    j_df = df.groupby(group_by_columns).apply(
-        lambda x: x[remaining_columns].to_dict(
-                            orient='records'))
+    j_user = []
+    for user, data_user in df.groupby(['user']):
+        user_dict = {}
+        user_dict['user'] = user
+        user_dict['total_score'] = data_user.user_score.values[0]
+        user_dict['weekly'] = {}
 
-    j_user = j_df.unstack('user').to_json()
-    j_week = j_df.unstack('week').to_json()
+        for week, data_week in data_user.groupby('week'):
+            user_dict['weekly'][week] = {}
+            user_dict['weekly'][week]['week_score'] = data_week['week_score']\
+                .values[0]
+            user_dict['weekly'][week]['roster'] = data_week[player_columns]\
+                .to_dict(orient='records')
+            continue
+        j_user.append(user_dict)
+    j_encoded = json.dumps(j_user, cls=NpEncoder)
+    return {'user': j_encoded, 'week': None}
+
+
+def save_json(json_dict):
+    j_user = json_dict['user']
+    # j_week = json_dict['week']
 
     with open('rosters_by_user.json', 'w') as f:
         f.write(j_user)
         f.close()
 
-    with open('rosters_by_week.json', 'w') as f:
-        f.write(j_week)
-        f.close()
-
     print('saved to json')
+
+
+def convert_group_teams_to_df(all_teams):
+
+    # create sorted list of users and their urls
+    team_names = [x.a.text.replace("'s picks", "").lower() for x in all_teams]
+    team_links = [x.a.attrs['href'] for x in all_teams]
+    teams_sorted = sorted(list(zip(team_names, team_links)))
+
+    # create list of all rosters
+    with multiprocessing.Pool() as p:
+        all_rosters = p.map(parse_roster, teams_sorted)
+
+    # convert to pandas and save to csv
+    flat_all_rosters = [item for sublist in all_rosters for item in sublist]
+    df_all_rosters = pd.DataFrame(flat_all_rosters)
+    return df_all_rosters
 
 
 def main():
@@ -141,27 +188,11 @@ def main():
     args = parser.parse_args()
 
     all_teams = pagify_scrape_group(args.group)
-
-    # create sorted list of users and their urls
-    team_names = [x.a.text.replace("'s picks", "").lower() for x in all_teams]
-    team_links = [x.a.attrs['href'] for x in all_teams]
-    teams_sorted = sorted(list(zip(team_names, team_links)))
-
-    # create list of all rosters
-    all_rosters = []
-    # for team in teams_sorted:
-    #     all_rosters.extend(parse_roster(team))
-
-    with multiprocessing.Pool() as p:
-        all_rosters = p.map(parse_roster, teams_sorted)
-
-    # import pdb; pdb.set_trace()
-    # convert to pandas and save to csv
-    flat_all_rosters = [item for sublist in all_rosters for item in sublist]
-    df_all_rosters = pd.DataFrame(flat_all_rosters)
+    df_all_rosters = convert_group_teams_to_df(all_teams)
     df_all_rosters.to_csv('rosters.csv')
 
-    save_json(df_all_rosters)
+    json_rosters = df_to_json(df_all_rosters)
+    save_json(json_rosters)
 
     end = time.time()
     print("total time: ", end - start)
