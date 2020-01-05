@@ -92,6 +92,7 @@ def parse_roster(team):
         score = slot.find('span', class_="display pts player-pts").em.text \
             if slot.find('span', class_="display pts player-pts") else 0
 
+        team_id = slot_attrs.get('data-sport-team-id')
         # player_img = slot.find('img', class_='player-img').attrs.get('src')
 
         roster_parsed.append({'user': user,
@@ -103,7 +104,7 @@ def parse_roster(team):
                               'roster_slot': slot_id.rsplit('-', 1)[-1],
                               'multiplier': slot_attrs.get(
                                   'data-player-multiplier'),
-                              'team': slot_attrs.get('data-sport-team-id'),
+                              'team': TEAM_DICTIONARY.get(team_id, team_id),
                               'score': score,
                               #   'player_img': player_img,
                               })
