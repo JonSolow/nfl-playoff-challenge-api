@@ -4,8 +4,16 @@ import argparse
 import time
 
 import pandas as pd
-import numpy as np
 import multiprocessing
+
+TEAM_DICTIONARY = {None: None,
+                   '21': 'New England Patriots',
+                   '13': 'Houston Texans',
+                   '20': 'Minnesota Vikings',
+                   '22': 'New Orleans Saints',
+                   '12': 'Tennessee Titans',
+                   '3': 'Buffalo Bills',
+                   }
 
 
 def scrape_teams_group_page(url):
@@ -82,7 +90,7 @@ def parse_roster(team):
             if slot.find('span', class_='first-name') else ''
 
         score = slot.find('span', class_="display pts player-pts").em.text \
-            if slot.find('span', class_="display pts player-pts") else None
+            if slot.find('span', class_="display pts player-pts") else 0
 
         # player_img = slot.find('img', class_='player-img').attrs.get('src')
 
@@ -103,14 +111,16 @@ def parse_roster(team):
 
 
 def save_json(df):
+
     group_by_columns = ['user', 'week']
     remaining_columns = list(set(df.columns) - set(group_by_columns))
 
-    j = (df.groupby(group_by_columns)
-           .apply(lambda x: x[remaining_columns].to_dict(orient='records')))
+    j_df = df.groupby(group_by_columns).apply(
+        lambda x: x[remaining_columns].to_dict(
+                            orient='records'))
 
-    j_user = j.unstack('user').to_json()
-    j_week = j.unstack('week').to_json()
+    j_user = j_df.unstack('user').to_json()
+    j_week = j_df.unstack('week').to_json()
 
     with open('rosters_by_user.json', 'w') as f:
         f.write(j_user)
@@ -148,6 +158,7 @@ def main():
     # convert to pandas and save to csv
     flat_all_rosters = [item for sublist in all_rosters for item in sublist]
     df_all_rosters = pd.DataFrame(flat_all_rosters)
+    df_all_rosters.to_csv('rosters.csv')
 
     save_json(df_all_rosters)
 

@@ -1,13 +1,17 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from scrape import pagify_scrape_group, parse_roster
 import multiprocessing
 
 import pandas as pd
 
 app = Flask(__name__)
+# cors = CORS(app, resources={r"/api/": {"origins": r"https://playoffchallengefrontend.herokuapp.com/*"}})
+cors = CORS(app, resources={r"/api/": {"origins": r"*"}})
 
 
-@app.route('/group_get/', methods=['GET'])
+
+@app.route('/api/', methods=['GET'])
 def respond():
     # Retrieve the name from url parameter
     group_id = request.args.get("group", None)
