@@ -2,32 +2,19 @@ from bs4 import BeautifulSoup
 import requests
 import argparse
 import time
-import json
 
 import pandas as pd
-import numpy as np
 import multiprocessing
 
 TEAM_DICTIONARY = {None: None,
-                   '21': 'New England Patriots',
-                   '13': 'Houston Texans',
-                   '20': 'Minnesota Vikings',
-                   '22': 'New Orleans Saints',
-                   '12': 'Tennessee Titans',
-                   '3': 'Buffalo Bills',
+                   '21': 'NE',
+                   '13': 'HOU',
+                   '20': 'MIN',
+                   '22': 'NO',
+                   '12': 'TEN',
+                   '3': 'BUF',
+                   '30': 'SEA'
                    }
-
-
-class NpEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, np.integer):
-            return int(obj)
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        elif isinstance(obj, np.ndarray):
-            return obj.tolist()
-        else:
-            return super(NpEncoder, self).default(obj)
 
 
 def scrape_teams_group_page(url):
@@ -130,7 +117,7 @@ def df_to_json(df):
     df['score'] = df['score'].apply(int)
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
-
+    df = df.astype(str)
     player_columns = ['player_name', 'position', 'roster_slot',
                       'multiplier', 'team', 'score']
 
@@ -149,8 +136,7 @@ def df_to_json(df):
                 .to_dict(orient='records')
             continue
         j_user.append(user_dict)
-    j_encoded = json.dumps(j_user, cls=NpEncoder)
-    return {'user': j_encoded, 'week': None}
+    return {'user': j_user, 'week': None}
 
 
 def save_json(json_dict):
@@ -192,7 +178,7 @@ def main():
     df_all_rosters.to_csv('rosters.csv')
 
     json_rosters = df_to_json(df_all_rosters)
-    save_json(json_rosters)
+    # save_json(json_rosters)
 
     end = time.time()
     print("total time: ", end - start)
