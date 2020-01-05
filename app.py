@@ -20,9 +20,13 @@ def respond():
     # Check if user sent a name at all
     if not group_id:
         response["ERROR"] = "no group found, please send a group."
+        return jsonify(response)
 
     all_teams = pagify_scrape_group(group_id)
 
+    if len(all_teams)==0:
+        response["ERROR"] = "No teams found for that group"
+        return jsonify(response)
     # create sorted list of users and their urls
     team_names = [x.a.text.replace("'s picks", "").lower() for x in all_teams]
     team_links = [x.a.attrs['href'] for x in all_teams]
