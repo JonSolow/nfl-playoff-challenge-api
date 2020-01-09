@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 from scrape import pagify_scrape_group
 from scrape import df_to_json, convert_group_teams_to_df
 
@@ -10,6 +10,7 @@ cors = CORS(app, resources={r"/api/": {"origins": r"*"}})
 
 
 @app.route('/api/', methods=['GET'])
+@cross_origin
 def respond():
     # Retrieve the name from url parameter
     group_id = request.args.get("group", None)
