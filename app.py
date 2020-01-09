@@ -10,7 +10,7 @@ cors = CORS(app, resources={r"/api/": {"origins": r"*"}})
 
 
 @app.route('/api/', methods=['GET'])
-@cross_origin
+@cross_origin()
 def respond():
     # Retrieve the name from url parameter
     group_id = request.args.get("group", None)
