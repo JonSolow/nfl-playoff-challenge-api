@@ -5,7 +5,6 @@ from scrape import df_to_json, convert_group_teams_to_df
 
 
 app = Flask(__name__)
-# cors = CORS(app, resources={r"/api/": {"origins": r"https://playoffchallengefrontend.herokuapp.com/*"}})
 cors = CORS(app, resources={r"/api/": {"origins": r"*"}})
 
 

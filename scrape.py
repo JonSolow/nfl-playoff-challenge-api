@@ -4,6 +4,7 @@ import argparse
 import time
 
 import pandas as pd
+import numpy as np
 import multiprocessing
 
 TEAM_DICTIONARY = {None: None,
@@ -127,14 +128,17 @@ def df_to_json(df):
         user_dict['user'] = user
         user_dict['total_score'] = data_user.user_score.values[0]
         # user_dict['weekly'] = {}
-
+        user_dict['slot_sum'] = np.zeros(8)
         for week, data_week in data_user.groupby('week'):
             user_dict[week] = {}
             user_dict[week]['week_score'] = data_week['week_score']\
                 .values[0]
             user_dict[week]['roster'] = data_week[player_columns]\
                 .to_dict(orient='records')
-            continue
+            user_dict['slot_sum'] += data_week.groupby('roster_slot')\
+                .score.sum().apply(int).values
+        user_dict['slot_sum'] = list(user_dict['slot_sum']
+                                     .astype(int).astype(str))
         j_user.append(user_dict)
     return {'users': j_user, 'weeks': None}
 
@@ -179,7 +183,6 @@ def main():
 
     json_rosters = df_to_json(df_all_rosters)
     # save_json(json_rosters)
-
     end = time.time()
     print("total time: ", end - start)
 
