@@ -135,11 +135,18 @@ def df_to_json(df):
                 .values[0]
             user_dict[week]['roster'] = data_week[player_columns]\
                 .to_dict(orient='records')
-            user_dict['slot_sum'] += data_week.groupby('roster_slot')\
-                .score.sum().apply(int).values
-        user_dict['slot_sum'] = list(user_dict['slot_sum']
-                                     .astype(int).astype(str))
+
+        grouped = (data_user[data_user.player_name != " "]
+                   .groupby('roster_slot'))
+        roster_scores = grouped.score.sum().to_dict()
+        last_slots = grouped.tail(1)
+        last_slots['score'] = last_slots.roster_slot.apply(
+                                            lambda x: roster_scores[x])
+        last_slots['week_score'] = last_slots.user_score
+        user_dict['total'] = last_slots.to_dict(orient='records')
         j_user.append(user_dict)
+        import pdb; pdb.set_trace()
+
     return {'users': j_user, 'weeks': None}
 
 
