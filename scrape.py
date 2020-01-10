@@ -145,7 +145,6 @@ def df_to_json(df):
         last_slots['week_score'] = last_slots.user_score
         user_dict['total'] = last_slots.to_dict(orient='records')
         j_user.append(user_dict)
-        import pdb; pdb.set_trace()
 
     return {'users': j_user, 'weeks': None}
 
