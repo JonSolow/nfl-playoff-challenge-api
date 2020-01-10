@@ -128,7 +128,6 @@ def df_to_json(df):
         user_dict['user'] = user
         user_dict['total_score'] = data_user.user_score.values[0]
         # user_dict['weekly'] = {}
-        user_dict['slot_sum'] = np.zeros(8)
         for week, data_week in data_user.groupby('week'):
             user_dict[week] = {}
             user_dict[week]['week_score'] = data_week['week_score']\
@@ -141,7 +140,7 @@ def df_to_json(df):
         roster_scores = grouped.score.sum().to_dict()
         last_slots = grouped.tail(1)
         last_slots['score'] = last_slots.roster_slot.apply(
-                                            lambda x: roster_scores[x])
+                                            lambda x: roster_scores[x]).apply(str)
         last_slots['week_score'] = last_slots.user_score
         user_dict['total'] = last_slots.to_dict(orient='records')
         j_user.append(user_dict)
