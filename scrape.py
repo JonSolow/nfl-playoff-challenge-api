@@ -178,6 +178,10 @@ def main():
     args = parser.parse_args()
 
     all_teams = pagify_scrape_group(args.group)
+    # remove not in contest
+    remove_list = ["rice9rs80's picks", "gkaminsky's picks"]
+    all_teams = [x for x in all_teams if x.text not in remove_list]
+
     df_all_rosters = convert_group_teams_to_df(all_teams)
     df_all_rosters.to_csv('rosters.csv')
 
