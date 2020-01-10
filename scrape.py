@@ -142,7 +142,15 @@ def df_to_json(df):
         last_slots['score'] = last_slots.roster_slot.apply(
                                             lambda x: roster_scores[x]).apply(str)
         last_slots['week_score'] = last_slots.user_score
-        user_dict['total'] = last_slots.to_dict(orient='records')
+        user_dict['total'] = {}
+        user_dict['total']['roster'] = last_slots[['multiplier',
+                                                    'player_name',
+                                                    'position',
+                                                    'roster_slot',
+                                                    'score',
+                                                    'team',]
+                                                    ].to_dict(orient='records')
+        user_dict['total']['week_score'] = user_dict['total_score']
         j_user.append(user_dict)
 
     return {'users': j_user, 'weeks': None}
