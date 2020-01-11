@@ -122,7 +122,7 @@ def df_to_json(df):
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
     df['img_url'] = df.player_name.apply(lambda x: image_locations.get(x, ""))
-    # df = df.astype(str)
+    df = df.astype(str)
     player_columns = ['player_name', 'position', 'roster_slot',
                       'multiplier', 'team', 'score', 'img_url']
     # run for getting list of all players to search for images
@@ -143,7 +143,7 @@ def df_to_json(df):
                 .values[0])
             user_dict[week]['roster'] = data_week[player_columns]\
                 .to_dict(orient='records')
-
+        data_user.score = data_user.score.apply(int)
         grouped = (data_user[data_user.player_name != " "]
                    .groupby('roster_slot'))
         # grouped.score = grouped.score.apply(int)
