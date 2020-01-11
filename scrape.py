@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup
 import requests
 import argparse
-import time
+# import time
 import json
 
 import pandas as pd
@@ -185,7 +185,7 @@ def convert_group_teams_to_df(all_teams):
 
 
 def main():
-    start = time.time()
+    # start = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument('--group')
     args = parser.parse_args()
@@ -200,8 +200,8 @@ def main():
 
     json_rosters = df_to_json(df_all_rosters)
     save_json(json_rosters)
-    end = time.time()
-    print("total time: ", end - start)
+    # end = time.time()
+    # print("total time: ", end - start)
 
 
 if __name__ == '__main__':

@@ -1,7 +1,5 @@
-from flask import Flask, request, jsonify
+from flask import Flask, jsonify
 from flask_cors import CORS, cross_origin
-from scrape import pagify_scrape_group
-from scrape import df_to_json, convert_group_teams_to_df
 import json
 
 app = Flask(__name__)
