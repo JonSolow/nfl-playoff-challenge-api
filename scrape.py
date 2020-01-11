@@ -124,7 +124,11 @@ def df_to_json(df):
     df = df.astype(str)
     player_columns = ['player_name', 'position', 'roster_slot',
                       'multiplier', 'team', 'score', 'img_url']
-
+    # run for getting list of all players to search for images
+    # player_names = df.player_name.unique()
+    # player_name_dict = {name: "" for name in sorted(player_names)}
+    # with open('player_names.json', 'w') as f:
+    #     json.dump(player_name_dict, f, indent=2)
     j_user = []
     for user, data_user in df.groupby(['user']):
         user_dict = {}
@@ -152,7 +156,8 @@ def df_to_json(df):
                                                    'position',
                                                    'roster_slot',
                                                    'score',
-                                                   'team']
+                                                   'team',
+                                                   'img_url']
                                                   ].to_dict(orient='records')
         user_dict['total']['week_score'] = user_dict['total_score']
         j_user.append(user_dict)
