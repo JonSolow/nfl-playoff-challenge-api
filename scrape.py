@@ -7,6 +7,8 @@ import json
 import pandas as pd
 import multiprocessing
 
+from image_locations import image_locations
+
 TEAM_DICTIONARY = {None: None,
                    '21': 'NE',
                    '13': 'HOU',
@@ -118,9 +120,10 @@ def df_to_json(df):
     df['score'] = df['score'].apply(int)
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
+    df['img_url'] = df.player_name.apply(lambda x: image_locations.get(x, ""))
     df = df.astype(str)
     player_columns = ['player_name', 'position', 'roster_slot',
-                      'multiplier', 'team', 'score']
+                      'multiplier', 'team', 'score', 'img_url']
 
     j_user = []
     for user, data_user in df.groupby(['user']):
@@ -130,6 +133,7 @@ def df_to_json(df):
         # user_dict['weekly'] = {}
         for week, data_week in data_user.groupby('week'):
             user_dict[week] = {}
+
             user_dict[week]['week_score'] = data_week['week_score']\
                 .values[0]
             user_dict[week]['roster'] = data_week[player_columns]\
