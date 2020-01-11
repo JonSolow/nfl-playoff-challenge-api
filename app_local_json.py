@@ -13,8 +13,8 @@ cors = CORS(app, resources={r"/api/": {"origins": r"*"}})
 def respond():
 
     json_rosters = json.load(open('rosters_by_user.json', 'r'))
-    response = {}
-    response['response'] = json_rosters
+
+    response = json_rosters
 
     # Return the response in json format
     return jsonify(response)
