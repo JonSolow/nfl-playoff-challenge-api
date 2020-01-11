@@ -16,7 +16,8 @@ TEAM_DICTIONARY = {None: None,
                    '22': 'NO',
                    '12': 'TEN',
                    '3': 'BUF',
-                   '30': 'SEA'
+                   '30': 'SEA',
+                   '29': 'SF'
                    }
 
 
