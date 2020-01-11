@@ -122,7 +122,7 @@ def df_to_json(df):
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
     df['img_url'] = df.player_name.apply(lambda x: image_locations.get(x, ""))
-    df = df.astype(str)
+    # df = df.astype(str)
     player_columns = ['player_name', 'position', 'roster_slot',
                       'multiplier', 'team', 'score', 'img_url']
     # run for getting list of all players to search for images
@@ -134,23 +134,25 @@ def df_to_json(df):
     for user, data_user in df.groupby(['user']):
         user_dict = {}
         user_dict['user'] = user
-        user_dict['total_score'] = data_user.user_score.values[0]
+        user_dict['total_score'] = str(data_user.user_score.values[0])
         # user_dict['weekly'] = {}
         for week, data_week in data_user.groupby('week'):
             user_dict[week] = {}
 
-            user_dict[week]['week_score'] = data_week['week_score']\
-                .values[0]
+            user_dict[week]['week_score'] = str(data_week['week_score']\
+                .values[0])
             user_dict[week]['roster'] = data_week[player_columns]\
                 .to_dict(orient='records')
 
         grouped = (data_user[data_user.player_name != " "]
                    .groupby('roster_slot'))
-        roster_scores = grouped.score.sum().to_dict()
+        # grouped.score = grouped.score.apply(int)
+
+        roster_scores = grouped.score.apply(sum).to_dict()
         last_slots = grouped.tail(1)
         last_slots['score'] = last_slots.roster_slot.apply(
                                         lambda x: roster_scores[x]).apply(str)
-        last_slots['week_score'] = last_slots.user_score
+        last_slots['week_score'] = str(last_slots.user_score)
         user_dict['total'] = {}
         user_dict['total']['roster'] = last_slots[['multiplier',
                                                    'player_name',
