@@ -2,9 +2,9 @@ from bs4 import BeautifulSoup
 import requests
 import argparse
 import time
+import json
 
 import pandas as pd
-import numpy as np
 import multiprocessing
 
 TEAM_DICTIONARY = {None: None,
@@ -140,16 +140,16 @@ def df_to_json(df):
         roster_scores = grouped.score.sum().to_dict()
         last_slots = grouped.tail(1)
         last_slots['score'] = last_slots.roster_slot.apply(
-                                            lambda x: roster_scores[x]).apply(str)
+                                        lambda x: roster_scores[x]).apply(str)
         last_slots['week_score'] = last_slots.user_score
         user_dict['total'] = {}
         user_dict['total']['roster'] = last_slots[['multiplier',
-                                                    'player_name',
-                                                    'position',
-                                                    'roster_slot',
-                                                    'score',
-                                                    'team',]
-                                                    ].to_dict(orient='records')
+                                                   'player_name',
+                                                   'position',
+                                                   'roster_slot',
+                                                   'score',
+                                                   'team']
+                                                  ].to_dict(orient='records')
         user_dict['total']['week_score'] = user_dict['total_score']
         j_user.append(user_dict)
 
@@ -157,11 +157,11 @@ def df_to_json(df):
 
 
 def save_json(json_dict):
-    j_user = json_dict['users']
-    # j_week = json_dict['weeks']
+    response = {}
+    response['response'] = json_dict
 
     with open('rosters_by_user.json', 'w') as f:
-        f.write(j_user)
+        json.dump(response, f)
         f.close()
 
     print('saved to json')
@@ -199,7 +199,7 @@ def main():
     df_all_rosters.to_csv('rosters.csv')
 
     json_rosters = df_to_json(df_all_rosters)
-    # save_json(json_rosters)
+    save_json(json_rosters)
     end = time.time()
     print("total time: ", end - start)
 
