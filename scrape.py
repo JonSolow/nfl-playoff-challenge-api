@@ -5,7 +5,7 @@ import argparse
 import json
 
 import pandas as pd
-import numpy as np
+# import numpy as np
 import multiprocessing
 
 from image_locations import image_locations
