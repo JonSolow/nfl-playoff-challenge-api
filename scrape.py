@@ -13,6 +13,7 @@ from image_locations import image_locations
 TEAM_DICTIONARY = {None: None,
                    '2': 'BAL',
                    '3': 'BUF',
+                   '11': 'GB',
                    '12': 'TEN',
                    '13': 'HOU',
                    '16': 'KC',
