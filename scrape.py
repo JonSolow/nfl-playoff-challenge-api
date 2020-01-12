@@ -11,16 +11,16 @@ import multiprocessing
 from image_locations import image_locations
 
 TEAM_DICTIONARY = {None: None,
-                   '21': 'NE',
-                   '13': 'HOU',
-                   '20': 'MIN',
-                   '22': 'NO',
-                   '12': 'TEN',
-                   '3': 'BUF',
-                   '30': 'SEA',
-                   '29': 'SF',
                    '2': 'BAL',
-                   '16': 'KC'
+                   '3': 'BUF',
+                   '12': 'TEN',
+                   '13': 'HOU',
+                   '16': 'KC',
+                   '20': 'MIN',
+                   '21': 'NE',
+                   '22': 'NO',
+                   '29': 'SF',
+                   '30': 'SEA',
                    }
 
 
@@ -142,8 +142,8 @@ def df_to_json(df):
         for week, data_week in data_user.groupby('week'):
             user_dict[week] = {}
 
-            user_dict[week]['week_score'] = str(data_week['week_score']\
-                .values[0])
+            user_dict[week]['week_score'] = str(data_week['week_score']
+                                                .values[0])
             data_week['team'] = data_week['team'].replace('None', np.nan)
             # import pdb; pdb.set_trace()
             user_dict[week]['roster'] = data_week[player_columns]\
@@ -159,7 +159,8 @@ def df_to_json(df):
                                         lambda x: roster_scores[x]).apply(str)
         last_slots['week_score'] = str(last_slots.user_score)
         user_dict['total'] = {}
-        user_dict['total']['roster'] = last_slots[player_columns].to_dict(orient='records')
+        user_dict['total']['roster'] = last_slots[player_columns].to_dict(
+                                            orient='records')
         user_dict['total']['week_score'] = user_dict['total_score']
         j_user.append(user_dict)
 
