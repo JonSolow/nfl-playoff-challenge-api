@@ -5,6 +5,7 @@ import argparse
 import json
 
 import pandas as pd
+import numpy as np
 import multiprocessing
 
 from image_locations import image_locations
@@ -143,6 +144,8 @@ def df_to_json(df):
 
             user_dict[week]['week_score'] = str(data_week['week_score']\
                 .values[0])
+            data_week['team'] = data_week['team'].replace('None', np.nan)
+            # import pdb; pdb.set_trace()
             user_dict[week]['roster'] = data_week[player_columns]\
                 .to_dict(orient='records')
         data_user.score = data_user.score.apply(int)
