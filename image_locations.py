@@ -1,5 +1,5 @@
 image_locations = {
-  "A.J. Brown": "https://upload.wikimedia.org/wikipedia/commons/2/2f/2019_Tennessee_Titans_2019_Week_15.jpg",
+  "A.J. Brown": "https://upload.wikimedia.org/wikipedia/commons/9/99/A_J_Brown_2019_10-13.jpg",
   "Aaron Jones": "https://upload.wikimedia.org/wikipedia/commons/9/99/Aaron_Jones_%2843964183845%29.jpg",
   "Aaron Rodgers": "https://upload.wikimedia.org/wikipedia/commons/9/9d/Aaron_Rodgers_2008.jpg",
   "Adam Thielen": "https://upload.wikimedia.org/wikipedia/commons/7/71/Adam_Thielen_2017.jpg",
@@ -28,7 +28,7 @@ image_locations = {
   "Emmanuel Sanders": "https://upload.wikimedia.org/wikipedia/commons/0/0f/Emmanuel_Sanders_2018.jpg",
   "George Kittle": "https://upload.wikimedia.org/wikipedia/commons/6/68/Kittle_with_fans_in_2019.jpg",
   "Green Bay Packers": "https://upload.wikimedia.org/wikipedia/commons/5/50/Green_Bay_Packers_logo.svg",
-  "Greg Joseph": "https://upload.wikimedia.org/wikipedia/commons/2/2f/2019_Tennessee_Titans_2019_Week_15.jpg",
+  "Greg Joseph": "https://upload.wikimedia.org/wikipedia/commons/d/d4/Greg_Joseph_%2848483835271%29.jpg",
   "Greg Ward": "",
   "Harrison Butker": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Harrison_Butker.JPG",
   "Houston Texans": "",
