@@ -8,7 +8,6 @@ import pandas as pd
 # import numpy as np
 import multiprocessing
 
-from image_locations import image_locations
 
 TEAM_DICTIONARY = {None: None,
                    '2': 'BAL',
@@ -102,7 +101,7 @@ def parse_roster(team):
             if slot.find('span', class_="display pts player-pts") else 0
 
         team_id = slot_attrs.get('data-sport-team-id')
-        # player_img = slot.find('img', class_='player-img').attrs.get('src')
+        player_img = slot.find('img', class_='player-img').attrs.get('src')
 
         roster_parsed.append({'user': user,
                               'player_name': ' '.join(
@@ -115,7 +114,7 @@ def parse_roster(team):
                                   'data-player-multiplier'),
                               'team': TEAM_DICTIONARY.get(team_id, team_id),
                               'score': score,
-                              #   'player_img': player_img,
+                              'player_img': player_img,
                               })
     return roster_parsed
 
@@ -136,7 +135,7 @@ def df_to_json(df):
     df['score'] = df['score'].apply(int)
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
-    df['img_url'] = df.player_name.apply(lambda x: image_locations.get(x, ""))
+    df['img_url'] = df['player_img']
     df = df.astype(str)
     player_columns = ['player_name', 'position', 'roster_slot',
                       'multiplier', 'team', 'score', 'img_url']
@@ -219,7 +218,7 @@ def main():
 
     all_teams = pagify_scrape_group(args.group)
     # remove not in contest
-    remove_list = ["rice9rs80's picks", "gkaminsky's picks"]
+    remove_list = []
     all_teams = [x for x in all_teams if x.text not in remove_list]
 
     df_all_rosters = convert_group_teams_to_df(all_teams)
