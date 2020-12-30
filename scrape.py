@@ -23,6 +23,7 @@ TEAM_DICTIONARY = {None: None,
                    '30': 'SEA',
                    }
 
+BASE_URL = 'https://playoffchallenge.fantasy.nfl.com'
 
 def scrape_teams_group_page(url):
     """Scrapes the teams from an NFL Playoff Challenge group
@@ -52,8 +53,7 @@ def pagify_scrape_group(group_id):
     empty = False
     offset = 0
     while not empty:
-        url = "https://playoffchallenge.fantasy.nfl.com/group/{}?offset={}"\
-            .format(group_id, offset)
+        url = f"{BASE_URL}/group/{group_id}?offset={offset}"
         page = scrape_teams_group_page(url)
         if len(page) == 0:
             empty = True
@@ -73,7 +73,7 @@ def scrape_team(url_suffix):
     Returns:
         roster_slots [type] -- [description]
     """
-    url_prefix = 'https://playoffchallenge.fantasy.nfl.com'
+    url_prefix = BASE_URL
     url = url_prefix + url_suffix
     page = requests.get(url)
     soup = BeautifulSoup(page.content, features="lxml")
@@ -135,7 +135,7 @@ def df_to_json(df):
     df['score'] = df['score'].apply(int)
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
-    df['img_url'] = df['player_img']
+    df['img_url'] = df['player_img'].apply(lambda x: f"{BASE_URL}{x}")
     df = df.astype(str)
     player_columns = ['player_name', 'position', 'roster_slot',
                       'multiplier', 'team', 'score', 'img_url']
