@@ -1,29 +1,13 @@
 from bs4 import BeautifulSoup
 import requests
 import argparse
-# import time
 import json
 
 import pandas as pd
-# import numpy as np
 import multiprocessing
 
+from scripts.constants import TEAM_DICTIONARY, BASE_URL, REMOVE_LIST, WEEK_REMAPPING
 
-TEAM_DICTIONARY = {None: None,
-                   '2': 'BAL',
-                   '3': 'BUF',
-                   '11': 'GB',
-                   '12': 'TEN',
-                   '13': 'HOU',
-                   '16': 'KC',
-                   '20': 'MIN',
-                   '21': 'NE',
-                   '22': 'NO',
-                   '29': 'SF',
-                   '30': 'SEA',
-                   }
-
-BASE_URL = 'https://playoffchallenge.fantasy.nfl.com'
 
 def scrape_teams_group_page(url):
     """Scrapes the teams from an NFL Playoff Challenge group
@@ -120,46 +104,48 @@ def parse_roster(team):
 
 
 def remap_weeks(df):
-    remap_dict = {
-        '1':'18',
-        '2':'19',
-        '3':'20',
-        '4':'22',
-    }
-    df['week'].replace(to_replace=remap_dict, inplace=True)
+    df['week'].replace(to_replace=WEEK_REMAPPING, inplace=True)
 
 
-def df_to_json(df):
-    # make scores int
-    remap_weeks(df)
+def format_df(df):
     df['score'] = df['score'].apply(int)
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
     df['img_url'] = df['player_img'].apply(lambda x: f"{BASE_URL}{x}")
     df = df.astype(str)
+
+
+def create_base_user_dict(user, data_user):
+    return {
+        'user': user,
+        'total_score': str(data_user.user_score.values[0])
+    }
+
+
+def create_week_result_dict(week, data_week, player_columns):
+    return {
+        week: {
+            'week_score': str(data_week['week_score'].values[0]),
+            'roster': data_week[player_columns].to_dict(orient='records')
+        }
+    }
+
+
+def df_to_json(df):
+    # make scores int
+    remap_weeks(df)
+    format_df(df)
     player_columns = ['player_name', 'position', 'roster_slot',
                       'multiplier', 'team', 'score', 'img_url']
-    # run for getting list of all players to search for images
-    # player_names = df.player_name.unique()
-    # player_name_dict = {name: "" for name in sorted(player_names)}
-    # with open('player_names.json', 'w') as f:
-    #     json.dump(player_name_dict, f, indent=2)
     j_user = []
     for user, data_user in df.groupby(['user']):
-        user_dict = {}
-        user_dict['user'] = user
-        user_dict['total_score'] = str(data_user.user_score.values[0])
-        # user_dict['weekly'] = {}
+        user_dict = create_base_user_dict(user, data_user)
+
         for week, data_week in data_user.groupby('week'):
-            user_dict[week] = {}
+            week_dict = create_week_result_dict(
+                week, data_week, player_columns)
+            user_dict.update(week_dict)
 
-            user_dict[week]['week_score'] = str(data_week['week_score']
-                                                .values[0])
-
-            # data_week['team'] = data_week['team'].replace('None', np.nan)
-
-            user_dict[week]['roster'] = data_week[player_columns]\
-                .to_dict(orient='records')
         data_user.score = data_user.score.apply(int)
         grouped = (data_user[data_user.player_name != " "]
                    .groupby('roster_slot'))
@@ -167,8 +153,6 @@ def df_to_json(df):
 
         roster_scores = grouped.score.apply(sum).to_dict()
         last_slots = grouped.tail(1)
-
-        # last_slots['team'] = last_slots['team'].replace('None', np.nan)
 
         last_slots['score'] = last_slots.roster_slot.apply(
                                         lambda x: roster_scores[x]).apply(str)
@@ -210,24 +194,34 @@ def convert_group_teams_to_df(all_teams):
     return df_all_rosters
 
 
+def remove_non_participants(all_teams, remove_list):
+    return [x for x in all_teams if x.text not in remove_list]
+
+
+def scrape_group(group_id):
+    response = {}
+    if not group_id:
+        response["ERROR"] = "no group found, please send a group."
+        return response
+
+    # scrape group pages
+    all_teams = pagify_scrape_group(group_id)
+    if len(all_teams) == 0:
+        response["ERROR"] = "No teams found for that group"
+        return response
+
+    filtered_teams = remove_non_participants(all_teams, REMOVE_LIST)
+    df_all_rosters = convert_group_teams_to_df(filtered_teams)
+    json_rosters = df_to_json(df_all_rosters)
+    response['response'] = json_rosters
+    return response
+
+
 def main():
-    # start = time.time()
     parser = argparse.ArgumentParser()
     parser.add_argument('--group')
     args = parser.parse_args()
-
-    all_teams = pagify_scrape_group(args.group)
-    # remove not in contest
-    remove_list = []
-    all_teams = [x for x in all_teams if x.text not in remove_list]
-
-    df_all_rosters = convert_group_teams_to_df(all_teams)
-    df_all_rosters.to_csv('rosters.csv')
-
-    json_rosters = df_to_json(df_all_rosters)
-    save_json(json_rosters)
-    # end = time.time()
-    # print("total time: ", end - start)
+    scrape_group(args.group)
 
 
 if __name__ == '__main__':

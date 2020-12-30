@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS, cross_origin
-from scrape import pagify_scrape_group
-from scrape import df_to_json, convert_group_teams_to_df
+from scripts.scrape import scrape_group
 
 
 app = Flask(__name__)
@@ -17,27 +16,7 @@ def respond():
     # For debugging
     print(f"got group_id: {group_id}")
 
-    response = {}
-
-    # Check if user sent a name at all
-    if not group_id:
-        response["ERROR"] = "no group found, please send a group."
-        return jsonify(response)
-
-    all_teams = pagify_scrape_group(group_id)
-
-    if len(all_teams) == 0:
-        response["ERROR"] = "No teams found for that group"
-        return jsonify(response)
-
-    # remove not in contest
-    remove_list = []
-    all_teams = [x for x in all_teams if x.text not in remove_list]
-
-    df_all_rosters = convert_group_teams_to_df(all_teams)
-    json_rosters = df_to_json(df_all_rosters)
-
-    response['response'] = json_rosters
+    response = scrape_group(group_id)
 
     # Return the response in json format
     return jsonify(response)
