@@ -31,7 +31,7 @@ def respond():
         return jsonify(response)
 
     # remove not in contest
-    remove_list = ["rice9rs80's picks", "gkaminsky's picks"]
+    remove_list = []
     all_teams = [x for x in all_teams if x.text not in remove_list]
 
     df_all_rosters = convert_group_teams_to_df(all_teams)

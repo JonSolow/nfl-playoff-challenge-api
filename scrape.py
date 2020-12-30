@@ -120,8 +120,19 @@ def parse_roster(team):
     return roster_parsed
 
 
+def remap_weeks(df):
+    remap_dict = {
+        '1':'18',
+        '2':'19',
+        '3':'20',
+        '4':'22',
+    }
+    df['week'].replace(to_replace=remap_dict, inplace=True)
+
+
 def df_to_json(df):
     # make scores int
+    remap_weeks(df)
     df['score'] = df['score'].apply(int)
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
