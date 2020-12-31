@@ -112,7 +112,6 @@ def remap_weeks(df):
 def format_df(df):
     df['score'] = df['score'].apply(int)
     df['user_score'] = df.groupby('user').score.transform(sum)
-    df = df.astype(str)
 
 
 def format_df_after_last_week(df):
@@ -122,40 +121,7 @@ def format_df_after_last_week(df):
     df.drop(columns=['player_img'], inplace=True)
     df['team'] = df['team'].apply(
         lambda x: constants.TEAM_DICTIONARY.get(x, x))
-
-
-def create_base_user_dict(user, data_user):
-    return {
-        'user': user,
-        'total_score': str(data_user.user_score.values[0])
-    }
-
-
-def create_week_result_dict(week, data_week):
-    player_columns = [
-        'player_name', 'position', 'roster_slot',
-        'multiplier', 'team', 'score', 'img_url']
-    return {
-        week: {
-            'week_score': str(data_week['week_score'].values[0]),
-            'roster': data_week[player_columns].to_dict(orient='records')
-        }
-    }
-
-
-def create_latest_week_df(data_user):
-    exclude_future_unrevealed = data_user[(
-        (data_user.player_name != ' ')
-        | (data_user.week == data_user.week.min())
-        )]
-    grouped_by_position = exclude_future_unrevealed.groupby('roster_slot')
-    roster_scores = grouped_by_position.score.apply(sum).to_dict()
-    last_slots = grouped_by_position.tail(1)
-    last_slots['week'] = "total"
-    last_slots['score'] = last_slots.roster_slot.apply(
-                                    lambda x: roster_scores[x])
-    last_slots['week_score'] = last_slots.score.sum()
-    return last_slots
+    df = df.astype(str)
 
 
 def create_total_week_df(df):
