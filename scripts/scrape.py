@@ -111,14 +111,17 @@ def remap_weeks(df):
 
 def format_df(df):
     df['score'] = df['score'].apply(int)
-    df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
+    df = df.astype(str)
+
+
+def format_df_after_last_week(df):
+    df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['img_url'] = df['player_img'].apply(
         lambda x: f"{constants.BASE_URL}{x}")
+    df.drop(columns=['player_img'], inplace=True)
     df['team'] = df['team'].apply(
         lambda x: constants.TEAM_DICTIONARY.get(x, x))
-    df.drop(columns=['player_img'], inplace=True)
-    df = df.astype(str)
 
 
 def create_base_user_dict(user, data_user):
@@ -155,21 +158,34 @@ def create_latest_week_df(data_user):
     return last_slots
 
 
+def create_total_week_df(df):
+    exclude_future_unrevealed = df[(
+        (df.player_name != ' ')
+        | (df.week == df.week.min())
+        )]
+    grouped_by_position = exclude_future_unrevealed.groupby(
+        ['user', 'roster_slot'])
+    roster_scores = grouped_by_position.score.apply(sum).to_dict()
+    last_slots = grouped_by_position.tail(1)
+    last_slots['week'] = "total"
+    last_slots['score'] = last_slots.apply(
+        lambda r: roster_scores[(r.user, r.roster_slot)], axis=1)
+    return last_slots
+
+
 def df_to_json(df):
     remap_weeks(df)
     format_df(df)
-    user_list = []
-    for user, data_user in df.groupby(['user']):
-        user_dict = create_base_user_dict(user, data_user)
-        latest_slots = create_latest_week_df(data_user)
-        all_data_user = pd.concat([data_user, latest_slots])
-        for week, data_week in all_data_user.groupby('week'):
-            week_dict = create_week_result_dict(week, data_week)
-            user_dict.update(week_dict)
+    total_slots_df = create_total_week_df(df)
+    df = pd.concat([df, total_slots_df])
+    format_df_after_last_week(df)
+    group_by_user_dict = {
+        user:
+            {week: df_week.to_dict(orient='records')
+                for week, df_week in df_user.groupby('week')}
+        for user, df_user in df.groupby('user')}
 
-        user_list.append(user_dict)
-
-    return {'users': user_list}
+    return {'users': group_by_user_dict}
 
 
 def convert_group_teams_to_df(all_teams):
