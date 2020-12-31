@@ -148,9 +148,10 @@ def create_latest_week_df(data_user):
     grouped_by_position = exclude_future_unrevealed.groupby('roster_slot')
     roster_scores = grouped_by_position.score.apply(sum).to_dict()
     last_slots = grouped_by_position.tail(1)
+    last_slots['week'] = "total"
     last_slots['score'] = last_slots.roster_slot.apply(
-                                    lambda x: roster_scores[x]).apply(str)
-    last_slots['week_score'] = str(last_slots.user_score)
+                                    lambda x: roster_scores[x])
+    last_slots['week_score'] = last_slots.score.sum()
     return last_slots
 
 
@@ -160,13 +161,12 @@ def df_to_json(df):
     user_list = []
     for user, data_user in df.groupby(['user']):
         user_dict = create_base_user_dict(user, data_user)
-
-        for week, data_week in data_user.groupby('week'):
+        latest_slots = create_latest_week_df(data_user)
+        all_data_user = pd.concat([data_user, latest_slots])
+        for week, data_week in all_data_user.groupby('week'):
             week_dict = create_week_result_dict(week, data_week)
             user_dict.update(week_dict)
 
-        latest_slots = create_latest_week_df(data_user)
-        user_dict.update(create_week_result_dict("total", latest_slots))
         user_list.append(user_dict)
 
     return {'users': user_list}
