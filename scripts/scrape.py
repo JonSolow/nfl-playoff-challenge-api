@@ -65,41 +65,45 @@ def scrape_team(url_suffix):
     return roster_slots
 
 
+def parse_roster_slot(slot):
+    slot_attrs = slot.div.attrs
+    slot_id = slot_attrs.get('id')
+    if not slot_id:
+        return {}
+
+    player_first_name = slot.find('span', class_='first-name').text \
+        if slot.find('span', class_='first-name') else ''
+
+    player_last_name = slot.find('span', class_='last-name').text \
+        if slot.find('span', class_='first-name') else ''
+
+    score = slot.find('span', class_="display pts player-pts").em.text \
+        if slot.find('span', class_="display pts player-pts") else "0"
+
+    team_id = slot_attrs.get('data-sport-team-id')
+
+    return {
+        'player_name': ' '.join([player_first_name, player_last_name]),
+        'position': slot_attrs.get('data-player-position'),
+        'week': slot_id.rsplit('-', 2)[-2],
+        'roster_slot': slot_id.rsplit('-', 1)[-1],
+        'multiplier': slot_attrs.get('data-player-multiplier'),
+        'team': TEAM_DICTIONARY.get(team_id, team_id),
+        'score': score,
+        'player_img': slot.find('img', class_='player-img').attrs.get('src'),
+        }
+
+
 def parse_roster(team):
     user, url_suffix = team
     roster = scrape_team(url_suffix)
     roster_parsed = []
     for slot in roster:
-        slot_attrs = slot.div.attrs
-        slot_id = slot_attrs.get('id')
-        if not slot_id:
+        slot_dict = parse_roster_slot(slot)
+        if not slot_dict:
             continue
-
-        player_first_name = slot.find('span', class_='first-name').text \
-            if slot.find('span', class_='first-name') else ''
-
-        player_last_name = slot.find('span', class_='last-name').text \
-            if slot.find('span', class_='first-name') else ''
-
-        score = slot.find('span', class_="display pts player-pts").em.text \
-            if slot.find('span', class_="display pts player-pts") else 0
-
-        team_id = slot_attrs.get('data-sport-team-id')
-        player_img = slot.find('img', class_='player-img').attrs.get('src')
-
-        roster_parsed.append({'user': user,
-                              'player_name': ' '.join(
-                                  [player_first_name, player_last_name]),
-                              'position': slot_attrs.get(
-                                  'data-player-position'),
-                              'week': slot_id.rsplit('-', 2)[-2],
-                              'roster_slot': slot_id.rsplit('-', 1)[-1],
-                              'multiplier': slot_attrs.get(
-                                  'data-player-multiplier'),
-                              'team': TEAM_DICTIONARY.get(team_id, team_id),
-                              'score': score,
-                              'player_img': player_img,
-                              })
+        slot_dict.update({'user': user})
+        roster_parsed.append(slot_dict)
     return roster_parsed
 
 
