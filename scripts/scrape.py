@@ -145,22 +145,16 @@ def df_to_json(df):
     total_slots_df = create_total_week_df(df)
     df = pd.concat([df, total_slots_df])
     format_df_after_last_week(df)
-    group_by_user_dict = [
-        {
-            **{
+    group_by_user_dict = {
+        week: [
+            {
                 'user': user,
-                'total_score': str(df_user[df_user.week != 'total'].score.sum())
-                },
-            **{
-                week: {
-                    'roster': df_week.to_dict(orient='records'),
-                    'week_score': str(df_week.score.sum())
-                }
-                for week, df_week in df_user.groupby('week')}
-        }
-        for user, df_user in df.groupby('user')
-        ]
-
+                'roster': df_user.to_dict(orient='records'),
+                'week_score': str(df_user.score.sum()),
+            }
+            for user, df_user in df_week.groupby('user')]
+        for week, df_week in df.groupby('week')
+    }
     return {'users': group_by_user_dict}
 
 
