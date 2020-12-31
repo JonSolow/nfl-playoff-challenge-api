@@ -1,5 +1,4 @@
 from scripts import scrape
-
 import pytest
 
 
