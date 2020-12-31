@@ -149,12 +149,12 @@ def df_to_json(df):
         {
             **{
                 'user': user,
-                'total_score': df_user[df_user.week != 'total'].score.sum()
+                'total_score': str(df_user[df_user.week != 'total'].score.sum())
                 },
             **{
                 week: {
                     'roster': df_week.to_dict(orient='records'),
-                    'week_score': df_week.score.sum()
+                    'week_score': str(df_week.score.sum())
                 }
                 for week, df_week in df_user.groupby('week')}
         }
