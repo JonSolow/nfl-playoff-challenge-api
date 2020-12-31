@@ -6,7 +6,7 @@ import json
 import pandas as pd
 import multiprocessing
 
-from scripts.constants import TEAM_DICTIONARY, BASE_URL, REMOVE_LIST, WEEK_REMAPPING
+from scripts import constants
 
 
 def scrape_teams_group_page(url):
@@ -37,7 +37,7 @@ def pagify_scrape_group(group_id):
     empty = False
     offset = 0
     while not empty:
-        url = f"{BASE_URL}/group/{group_id}?offset={offset}"
+        url = f"{constants.BASE_URL}/group/{group_id}?offset={offset}"
         page = scrape_teams_group_page(url)
         if len(page) == 0:
             empty = True
@@ -57,7 +57,7 @@ def scrape_team(url_suffix):
     Returns:
         roster_slots [type] -- [description]
     """
-    url_prefix = BASE_URL
+    url_prefix = constants.BASE_URL
     url = url_prefix + url_suffix
     page = requests.get(url)
     soup = BeautifulSoup(page.content, features="lxml")
@@ -88,7 +88,7 @@ def parse_roster_slot(slot):
         'week': slot_id.rsplit('-', 2)[-2],
         'roster_slot': slot_id.rsplit('-', 1)[-1],
         'multiplier': slot_attrs.get('data-player-multiplier'),
-        'team': TEAM_DICTIONARY.get(team_id, team_id),
+        'team': constants.TEAM_DICTIONARY.get(team_id, team_id),
         'score': score,
         'player_img': slot.find('img', class_='player-img').attrs.get('src'),
         }
@@ -108,14 +108,14 @@ def parse_roster(team):
 
 
 def remap_weeks(df):
-    df['week'].replace(to_replace=WEEK_REMAPPING, inplace=True)
+    df['week'].replace(to_replace=constants.WEEK_REMAPPING, inplace=True)
 
 
 def format_df(df):
     df['score'] = df['score'].apply(int)
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
-    df['img_url'] = df['player_img'].apply(lambda x: f"{BASE_URL}{x}")
+    df['img_url'] = df['player_img'].apply(lambda x: f"{constants.BASE_URL}{x}")
     df = df.astype(str)
 
 
@@ -214,7 +214,7 @@ def scrape_group(group_id):
         response["ERROR"] = "No teams found for that group"
         return response
 
-    filtered_teams = remove_non_participants(all_teams, REMOVE_LIST)
+    filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
     df_all_rosters = convert_group_teams_to_df(filtered_teams)
     json_rosters = df_to_json(df_all_rosters)
     response['response'] = json_rosters
