@@ -1,7 +1,6 @@
 from bs4 import BeautifulSoup
 import requests
 import argparse
-import json
 
 import pandas as pd
 import multiprocessing
@@ -81,14 +80,13 @@ def parse_roster_slot(slot):
         if slot.find('span', class_="display pts player-pts") else "0"
 
     team_id = slot_attrs.get('data-sport-team-id')
-
     return {
         'player_name': ' '.join([player_first_name, player_last_name]),
         'position': slot_attrs.get('data-player-position'),
         'week': slot_id.rsplit('-', 2)[-2],
         'roster_slot': slot_id.rsplit('-', 1)[-1],
         'multiplier': slot_attrs.get('data-player-multiplier'),
-        'team': constants.TEAM_DICTIONARY.get(team_id, team_id),
+        'team': team_id,
         'score': score,
         'player_img': slot.find('img', class_='player-img').attrs.get('src'),
         }
@@ -115,7 +113,11 @@ def format_df(df):
     df['score'] = df['score'].apply(int)
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['user_score'] = df.groupby('user').score.transform(sum)
-    df['img_url'] = df['player_img'].apply(lambda x: f"{constants.BASE_URL}{x}")
+    df['img_url'] = df['player_img'].apply(
+        lambda x: f"{constants.BASE_URL}{x}")
+    df['team'] = df['team'].apply(
+        lambda x: constants.TEAM_DICTIONARY.get(x, x))
+    df.drop(columns=['player_img'], inplace=True)
     df = df.astype(str)
 
 
@@ -126,7 +128,10 @@ def create_base_user_dict(user, data_user):
     }
 
 
-def create_week_result_dict(week, data_week, player_columns):
+def create_week_result_dict(week, data_week):
+    player_columns = [
+        'player_name', 'position', 'roster_slot',
+        'multiplier', 'team', 'score', 'img_url']
     return {
         week: {
             'week_score': str(data_week['week_score'].values[0]),
@@ -135,50 +140,36 @@ def create_week_result_dict(week, data_week, player_columns):
     }
 
 
+def create_latest_week_df(data_user):
+    exclude_future_unrevealed = data_user[(
+        (data_user.player_name != ' ')
+        | (data_user.week == data_user.week.min())
+        )]
+    grouped_by_position = exclude_future_unrevealed.groupby('roster_slot')
+    roster_scores = grouped_by_position.score.apply(sum).to_dict()
+    last_slots = grouped_by_position.tail(1)
+    last_slots['score'] = last_slots.roster_slot.apply(
+                                    lambda x: roster_scores[x]).apply(str)
+    last_slots['week_score'] = str(last_slots.user_score)
+    return last_slots
+
+
 def df_to_json(df):
-    # make scores int
     remap_weeks(df)
     format_df(df)
-    player_columns = ['player_name', 'position', 'roster_slot',
-                      'multiplier', 'team', 'score', 'img_url']
-    j_user = []
+    user_list = []
     for user, data_user in df.groupby(['user']):
         user_dict = create_base_user_dict(user, data_user)
 
         for week, data_week in data_user.groupby('week'):
-            week_dict = create_week_result_dict(
-                week, data_week, player_columns)
+            week_dict = create_week_result_dict(week, data_week)
             user_dict.update(week_dict)
 
-        data_user.score = data_user.score.apply(int)
-        grouped = (data_user[data_user.player_name != " "]
-                   .groupby('roster_slot'))
-        # grouped.score = grouped.score.apply(int)
+        latest_slots = create_latest_week_df(data_user)
+        user_dict.update(create_week_result_dict("total", latest_slots))
+        user_list.append(user_dict)
 
-        roster_scores = grouped.score.apply(sum).to_dict()
-        last_slots = grouped.tail(1)
-
-        last_slots['score'] = last_slots.roster_slot.apply(
-                                        lambda x: roster_scores[x]).apply(str)
-        last_slots['week_score'] = str(last_slots.user_score)
-        user_dict['total'] = {}
-        user_dict['total']['roster'] = last_slots[player_columns].to_dict(
-                                            orient='records')
-        user_dict['total']['week_score'] = user_dict['total_score']
-        j_user.append(user_dict)
-
-    return {'users': j_user, 'weeks': None}
-
-
-def save_json(json_dict):
-    response = {}
-    response['response'] = json_dict
-
-    with open('rosters_by_user.json', 'w') as f:
-        json.dump(response, f)
-        f.close()
-
-    print('saved to json')
+    return {'users': user_list}
 
 
 def convert_group_teams_to_df(all_teams):
@@ -192,7 +183,7 @@ def convert_group_teams_to_df(all_teams):
     with multiprocessing.Pool() as p:
         all_rosters = p.map(parse_roster, teams_sorted)
 
-    # convert to pandas and save to csv
+    # convert to pandas and save to df
     flat_all_rosters = [item for sublist in all_rosters for item in sublist]
     df_all_rosters = pd.DataFrame(flat_all_rosters)
     return df_all_rosters
