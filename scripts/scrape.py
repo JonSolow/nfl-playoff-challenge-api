@@ -4,7 +4,6 @@ import argparse
 
 import pandas as pd
 import multiprocessing
-import urllib3
 
 from scripts import constants
 
