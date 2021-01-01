@@ -205,10 +205,10 @@ def remove_non_participants(all_teams, remove_list):
 
 
 def scrape_group(group_id, use_multiprocessing=True, use_sample_roster=False):
+    response = {}
     if use_sample_roster:
         team_tuples_sorted = [("test", "")]
     else:
-        response = {}
         if not group_id:
             response["ERROR"] = "no group found, please send a group."
             return response
