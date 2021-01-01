@@ -4,6 +4,7 @@ import argparse
 
 import pandas as pd
 import multiprocessing
+import urllib3
 
 from scripts import constants
 
@@ -64,10 +65,10 @@ def scrape_team(url_suffix):
     return roster_slots
 
 
-def sample_roster():
+def sample_roster(team):
     """Returns a roster from the samples/sample_entry.html"""
-    page = urllib3.urlopen("scripts/samples/sample_entry.html")
-    soup = BeautifulSoup(page.content, features="lxml")
+    with open("scripts/samples/sample_entry.html", 'r') as page:
+        soup = BeautifulSoup(page, 'html.parser')
     roster_slots = soup.find_all('li', class_='roster-slot')
     return roster_slots
 
