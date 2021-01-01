@@ -64,6 +64,14 @@ def scrape_team(url_suffix):
     return roster_slots
 
 
+def sample_roster():
+    """Returns a roster from the samples/sample_entry.html"""
+    page = urllib3.urlopen("scripts/samples/sample_entry.html")
+    soup = BeautifulSoup(page.content, features="lxml")
+    roster_slots = soup.find_all('li', class_='roster-slot')
+    return roster_slots
+
+
 def parse_roster_slot(slot):
     slot_attrs = slot.div.attrs
     slot_id = slot_attrs.get('id')
