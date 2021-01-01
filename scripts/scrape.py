@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 import requests
 import argparse
 
@@ -133,7 +134,7 @@ def format_df(df):
 def format_df_after_last_week(df):
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
     df['img_url'] = df['player_img'].apply(
-        lambda x: f"{constants.BASE_URL}{x}")
+        lambda x: urljoin(constants.BASE_URL, x))
     df.drop(columns=['player_img'], inplace=True)
     df['team'] = df['team'].apply(
         lambda x: constants.TEAM_DICTIONARY.get(x, x))
