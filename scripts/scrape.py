@@ -205,19 +205,23 @@ def remove_non_participants(all_teams, remove_list):
 
 
 def scrape_group(group_id, use_multiprocessing=True, use_sample_roster=False):
-    response = {}
-    if not group_id:
-        response["ERROR"] = "no group found, please send a group."
-        return response
+    if use_sample_roster:
+        team_tuples_sorted = [("test", "")]
+    else:
+        response = {}
+        if not group_id:
+            response["ERROR"] = "no group found, please send a group."
+            return response
 
-    # scrape group pages
-    all_teams = pagify_scrape_group(group_id)
-    if len(all_teams) == 0:
-        response["ERROR"] = "No teams found for that group"
-        return response
+        # scrape group pages
+        all_teams = pagify_scrape_group(group_id)
+        if len(all_teams) == 0:
+            response["ERROR"] = "No teams found for that group"
+            return response
 
-    filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
-    team_tuples_sorted = create_team_tuples_from_tags(filtered_teams)
+        filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
+        team_tuples_sorted = create_team_tuples_from_tags(filtered_teams)
+
     flat_all_rosters = parse_rosters_from_team_tuples(team_tuples_sorted, use_multiprocessing=use_multiprocessing, use_sample_roster=use_sample_roster)
     df_all_rosters = pd.DataFrame(flat_all_rosters)
     json_rosters = df_to_json(df_all_rosters)

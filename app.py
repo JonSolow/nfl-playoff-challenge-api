@@ -12,11 +12,12 @@ cors = CORS(app, resources={r"/api/": {"origins": r"*"}})
 def respond():
     # Retrieve the name from url parameter
     group_id = request.args.get("group", None)
+    use_sample_roster = request.args.get("sample", False)
 
     # For debugging
     print(f"got group_id: {group_id}")
 
-    response = scrape_group(group_id)
+    response = scrape_group(group_id, use_sample_roster=use_sample_roster)
 
     # Return the response in json format
     return jsonify(response)
