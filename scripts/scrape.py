@@ -1,5 +1,4 @@
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
 import requests
 import argparse
 
@@ -65,22 +64,6 @@ def scrape_team(url_suffix):
     return roster_slots
 
 
-def sample_roster(team):
-    """Returns a roster from the samples/sample_entry.html"""
-    with open("scripts/samples/sample_entry.html", 'r') as page:
-        soup = BeautifulSoup(page, 'html.parser')
-    roster = soup.find_all('li', class_='roster-slot')
-    user = "Test"
-    roster_parsed = []
-    for slot in roster:
-        slot_dict = parse_roster_slot(slot)
-        if not slot_dict:
-            continue
-        slot_dict.update({'user': user})
-        roster_parsed.append(slot_dict)
-    return roster_parsed
-
-
 def parse_roster_slot(slot):
     slot_attrs = slot.div.attrs
     slot_id = slot_attrs.get('id')
@@ -131,16 +114,10 @@ def format_df(df):
     df['user_score'] = df.groupby('user').score.transform(sum)
 
 
-def modify_img_url(row):
-    if row.player_name == ' ':
-        return urljoin(constants.BASE_URL, row.player_img)
-    else:
-        return row.player_img
-
-
 def format_df_after_last_week(df):
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
-    df['img_url'] = df.apply(lambda r: modify_img_url(r), axis=1)
+    df['img_url'] = df['player_img'].apply(
+        lambda x: f"{constants.BASE_URL}{x}")
     df.drop(columns=['player_img'], inplace=True)
     df['team'] = df['team'].apply(
         lambda x: constants.TEAM_DICTIONARY.get(x, x))
@@ -182,60 +159,43 @@ def df_to_json(df):
     return {'users': group_by_user_dict}
 
 
-def parse_rosters_from_team_tuples(team_tuples, use_multiprocessing=True, use_sample_roster=False):
-    if use_sample_roster:
-        roster_function = sample_roster
-    else:
-        roster_function = parse_roster
+def convert_group_teams_to_df(all_teams):
+
+    # create sorted list of users and their urls
+    team_names = [x.a.text.replace("'s picks", "").lower() for x in all_teams]
+    team_links = [x.a.attrs['href'] for x in all_teams]
+    teams_sorted = sorted(list(zip(team_names, team_links)))
 
     # create list of all rosters
-    if use_multiprocessing:
-        with multiprocessing.Pool() as p:
-            all_rosters = p.map(roster_function, team_tuples)
-    else:
-        all_rosters = [roster_function(team) for team in team_tuples]
-    
+    with multiprocessing.Pool() as p:
+        all_rosters = p.map(parse_roster, teams_sorted)
+
+    # convert to pandas and save to df
     flat_all_rosters = [item for sublist in all_rosters for item in sublist]
-    return flat_all_rosters
-
-
-def create_team_tuples_from_tags(all_teams_tags):
-    # create sorted list of users and their urls
-    team_names = [x.a.text.replace("'s picks", "").lower() for x in all_teams_tags]
-    team_links = [x.a.attrs['href'] for x in all_teams_tags]
-    team_tuples_sorted = sorted(list(zip(team_names, team_links)))
-    return team_tuples_sorted
+    df_all_rosters = pd.DataFrame(flat_all_rosters)
+    return df_all_rosters
 
 
 def remove_non_participants(all_teams, remove_list):
     return [x for x in all_teams if x.text not in remove_list]
 
 
-def scrape_group(group_id, use_multiprocessing=True, use_sample_roster=False):
+def scrape_group(group_id):
     response = {}
-    if use_sample_roster:
-        team_tuples_sorted = [("test", "")]
-    else:
-        if not group_id:
-            response["ERROR"] = "no group found, please send a group."
-            return response
+    if not group_id:
+        response["ERROR"] = "no group found, please send a group."
+        return response
 
-        # scrape group pages
-        all_teams = pagify_scrape_group(group_id)
-        if len(all_teams) == 0:
-            response["ERROR"] = "No teams found for that group"
-            return response
+    # scrape group pages
+    all_teams = pagify_scrape_group(group_id)
+    if len(all_teams) == 0:
+        response["ERROR"] = "No teams found for that group"
+        return response
 
-        filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
-        team_tuples_sorted = create_team_tuples_from_tags(filtered_teams)
-
-    response['response'] = df_to_json(
-        pd.DataFrame(
-            parse_rosters_from_team_tuples(
-                team_tuples_sorted,
-                use_multiprocessing=use_multiprocessing,
-                use_sample_roster=use_sample_roster
-                )))
+    filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
+    df_all_rosters = convert_group_teams_to_df(filtered_teams)
+    json_rosters = df_to_json(df_all_rosters)
+    response['response'] = json_rosters
     return response
 
 
