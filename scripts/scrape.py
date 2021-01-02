@@ -229,10 +229,13 @@ def scrape_group(group_id, use_multiprocessing=True, use_sample_roster=False):
         filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
         team_tuples_sorted = create_team_tuples_from_tags(filtered_teams)
 
-    flat_all_rosters = parse_rosters_from_team_tuples(team_tuples_sorted, use_multiprocessing=use_multiprocessing, use_sample_roster=use_sample_roster)
-    df_all_rosters = pd.DataFrame(flat_all_rosters)
-    json_rosters = df_to_json(df_all_rosters)
-    response['response'] = json_rosters
+    response['response'] = df_to_json(
+        pd.DataFrame(
+            parse_rosters_from_team_tuples(
+                team_tuples_sorted,
+                use_multiprocessing=use_multiprocessing,
+                use_sample_roster=use_sample_roster
+                )))
     return response
 
 
