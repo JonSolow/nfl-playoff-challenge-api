@@ -131,10 +131,16 @@ def format_df(df):
     df['user_score'] = df.groupby('user').score.transform(sum)
 
 
+def modify_img_url(row):
+    if row.player_name == '':
+        return urljoin(constants.BASE_URL, row.player_img))
+    else:
+        return row.player_img
+
+
 def format_df_after_last_week(df):
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
-    df['img_url'] = df['player_img'].apply(
-        lambda x: urljoin(constants.BASE_URL, x))
+    df['img_url'] = df['player_img'].apply(lambda r: modify_img_url(r), axis=1)
     df.drop(columns=['player_img'], inplace=True)
     df['team'] = df['team'].apply(
         lambda x: constants.TEAM_DICTIONARY.get(x, x))
