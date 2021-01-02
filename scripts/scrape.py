@@ -140,7 +140,7 @@ def modify_img_url(row):
 
 def format_df_after_last_week(df):
     df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
-    df['img_url'] = df['player_img'].apply(lambda r: modify_img_url(r), axis=1)
+    df['img_url'] = df.apply(lambda r: modify_img_url(r), axis=1)
     df.drop(columns=['player_img'], inplace=True)
     df['team'] = df['team'].apply(
         lambda x: constants.TEAM_DICTIONARY.get(x, x))
