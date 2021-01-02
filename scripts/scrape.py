@@ -132,7 +132,7 @@ def format_df(df):
 
 
 def modify_img_url(row):
-    if row.player_name == '':
+    if row.player_name == ' ':
         return urljoin(constants.BASE_URL, row.player_img)
     else:
         return row.player_img
