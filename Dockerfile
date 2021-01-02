@@ -52,4 +52,4 @@ ENV FASTAPI_ENV=production
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 COPY ./service /service/
 WORKDIR /service
-CMD ["gunicorn", "-b", "0.0.0.0:8000", "app:app"]
+CMD gunicorn --bind 0.0.0.0:$PORT app:app
