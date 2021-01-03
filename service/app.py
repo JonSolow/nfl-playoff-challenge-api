@@ -18,8 +18,14 @@ cors = CORS(app, resources={r"/api/": {"origins": r"*"}})
 app.config.from_mapping(config)
 cache = Cache(app)
 
-@app.route('/api/', methods=['GET'])
+
 @cache.memoize(timeout=120)
+def cached_scrape_group(group_id):
+    print(f"external call for : {group_id}")
+    return jsonify(scrape_group(group_id))
+
+
+@app.route('/api/', methods=['GET'])
 @cross_origin()
 def respond():
     # Retrieve the name from url parameter
@@ -28,10 +34,7 @@ def respond():
     # For debugging
     print(f"got group_id: {group_id}")
 
-    response = scrape_group(group_id)
-
-    # Return the response in json format
-    return jsonify(response)
+    return cached_scrape_group(group_id)
 
 
 # A welcome message to test our server
