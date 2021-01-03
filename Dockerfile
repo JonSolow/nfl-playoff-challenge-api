@@ -46,6 +46,25 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry install --no-dev
 
 
+# `development` image is used during development / testing
+FROM python-base as development
+ENV FASTAPI_ENV=development
+WORKDIR $PYSETUP_PATH
+
+# copy in our built poetry + venv
+COPY --from=builder-base $POETRY_HOME $POETRY_HOME
+COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
+
+# quicker install as runtime deps are already installed
+RUN poetry install
+
+# will become mountpoint of our code
+COPY ./service /service/
+WORKDIR /service
+
+CMD tail -f /dev/null
+
+
 # `production` image used for runtime
 FROM python-base as production
 ENV FASTAPI_ENV=production

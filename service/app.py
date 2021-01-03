@@ -1,15 +1,25 @@
 from flask import Flask, request, jsonify
+from flask_caching import Cache
 from flask_cors import CORS, cross_origin
 from scripts.scrape import scrape_group
 import os
 
 
+config = {
+    "DEBUG": True,          # some Flask specific configs
+    "CACHE_TYPE": "simple", # Flask-Caching related configs
+    "CACHE_DEFAULT_TIMEOUT": 300
+}
+
 app = Flask(__name__)
 port = int(os.getenv("PORT", "5000"))
 cors = CORS(app, resources={r"/api/": {"origins": r"*"}})
 
+app.config.from_mapping(config)
+cache = Cache(app)
 
 @app.route('/api/', methods=['GET'])
+@cache.cached(timeout=300)
 @cross_origin()
 def respond():
     # Retrieve the name from url parameter

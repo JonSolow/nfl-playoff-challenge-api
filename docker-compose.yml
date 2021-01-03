@@ -1,0 +1,21 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - PORT=${PORT}
+
+  dev:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    depends_on:
+      - "web"
+
+
