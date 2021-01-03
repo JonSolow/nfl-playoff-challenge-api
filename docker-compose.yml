@@ -18,5 +18,9 @@ services:
       target: development
     depends_on:
       - "web"
-
+    volumes:
+      - type: bind
+        source: ./service
+        target: /service
+        consistency: cached
 
