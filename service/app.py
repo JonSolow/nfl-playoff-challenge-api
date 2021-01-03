@@ -19,7 +19,7 @@ app.config.from_mapping(config)
 cache = Cache(app)
 
 @app.route('/api/', methods=['GET'])
-@cache.memoize(timeout=300)
+@cache.memoize(timeout=120)
 @cross_origin()
 def respond():
     # Retrieve the name from url parameter
