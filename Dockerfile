@@ -59,8 +59,9 @@ COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 RUN poetry install
 
 # will become mountpoint of our code
-COPY ./service /service/
-WORKDIR /service
+COPY ./service /opt/service/
+COPY ./tests /opt/tests/
+WORKDIR /opt/service
 
 CMD tail -f /dev/null
 
@@ -69,6 +70,6 @@ CMD tail -f /dev/null
 FROM python-base as production
 ENV FASTAPI_ENV=production
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
-COPY ./service /service/
-WORKDIR /service
+COPY ./service /opt/service/
+WORKDIR /opt/service
 CMD gunicorn --bind 0.0.0.0:$PORT -w 2 --keep-alive 60 --preload app:app

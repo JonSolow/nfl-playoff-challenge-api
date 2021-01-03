@@ -21,7 +21,7 @@ def scrape_teams_group_page(url):
     """
     page = requests.get(url)
     soup = BeautifulSoup(page.content, features="lxml")
-    entry_list = soup.find_all('td', class_='groupEntryName')
+    entry_list = soup.find_all("td", class_="groupEntryName")
     return entry_list
 
 
@@ -60,36 +60,45 @@ def scrape_team(url_suffix):
     url = url_prefix + url_suffix
     page = requests.get(url)
     soup = BeautifulSoup(page.content, features="lxml")
-    roster_slots = soup.find_all('li', class_='roster-slot')
+    roster_slots = soup.find_all("li", class_="roster-slot")
     return roster_slots
 
 
 def parse_roster_slot(slot):
     slot_attrs = slot.div.attrs
-    slot_id = slot_attrs.get('id')
+    slot_id = slot_attrs.get("id")
     if not slot_id:
         return {}
 
-    player_first_name = slot.find('span', class_='first-name').text \
-        if slot.find('span', class_='first-name') else ''
+    player_first_name = (
+        slot.find("span", class_="first-name").text
+        if slot.find("span", class_="first-name")
+        else ""
+    )
 
-    player_last_name = slot.find('span', class_='last-name').text \
-        if slot.find('span', class_='first-name') else ''
+    player_last_name = (
+        slot.find("span", class_="last-name").text
+        if slot.find("span", class_="first-name")
+        else ""
+    )
 
-    score = slot.find('span', class_="display pts player-pts").em.text \
-        if slot.find('span', class_="display pts player-pts") else "0"
+    score = (
+        slot.find("span", class_="display pts player-pts").em.text
+        if slot.find("span", class_="display pts player-pts")
+        else "0"
+    )
 
-    team_id = slot_attrs.get('data-sport-team-id')
+    team_id = slot_attrs.get("data-sport-team-id")
     return {
-        'player_name': ' '.join([player_first_name, player_last_name]),
-        'position': slot_attrs.get('data-player-position'),
-        'week': slot_id.rsplit('-', 2)[-2],
-        'roster_slot': slot_id.rsplit('-', 1)[-1],
-        'multiplier': slot_attrs.get('data-player-multiplier'),
-        'team': team_id,
-        'score': score,
-        'player_img': slot.find('img', class_='player-img').attrs.get('src'),
-        }
+        "player_name": " ".join([player_first_name, player_last_name]),
+        "position": slot_attrs.get("data-player-position"),
+        "week": slot_id.rsplit("-", 2)[-2],
+        "roster_slot": slot_id.rsplit("-", 1)[-1],
+        "multiplier": slot_attrs.get("data-player-multiplier"),
+        "team": team_id,
+        "score": score,
+        "player_img": slot.find("img", class_="player-img").attrs.get("src"),
+    }
 
 
 def parse_roster(team):
@@ -100,42 +109,39 @@ def parse_roster(team):
         slot_dict = parse_roster_slot(slot)
         if not slot_dict:
             continue
-        slot_dict.update({'user': user})
+        slot_dict.update({"user": user})
         roster_parsed.append(slot_dict)
     return roster_parsed
 
 
 def remap_weeks(df):
-    df['week'].replace(to_replace=constants.WEEK_REMAPPING, inplace=True)
+    df["week"].replace(to_replace=constants.WEEK_REMAPPING, inplace=True)
 
 
 def format_df(df):
-    df['score'] = df['score'].apply(int)
-    df['user_score'] = df.groupby('user').score.transform(sum)
+    df["score"] = df["score"].apply(int)
+    df["user_score"] = df.groupby("user").score.transform(sum)
 
 
 def format_df_after_last_week(df):
-    df['week_score'] = df.groupby(['user', 'week']).score.transform(sum)
-    df['img_url'] = df['player_img'].apply(
-        lambda x: f"{constants.BASE_URL}{x}")
-    df.drop(columns=['player_img'], inplace=True)
-    df['team'] = df['team'].apply(
-        lambda x: constants.TEAM_DICTIONARY.get(x, x))
+    df["week_score"] = df.groupby(["user", "week"]).score.transform(sum)
+    df["img_url"] = df["player_img"].apply(lambda x: f"{constants.BASE_URL}{x}")
+    df.drop(columns=["player_img"], inplace=True)
+    df["team"] = df["team"].apply(lambda x: constants.TEAM_DICTIONARY.get(x, x))
     df = df.astype(str)
 
 
 def create_total_week_df(df):
-    exclude_future_unrevealed = df[(
-        (df.player_name != ' ')
-        | (df.week == df.week.min())
-        )]
-    grouped_by_position = exclude_future_unrevealed.groupby(
-        ['user', 'roster_slot'])
+    exclude_future_unrevealed = df[
+        ((df.player_name != " ") | (df.week == df.week.min()))
+    ]
+    grouped_by_position = exclude_future_unrevealed.groupby(["user", "roster_slot"])
     roster_scores = grouped_by_position.score.apply(sum).to_dict()
     last_slots = grouped_by_position.tail(1)
-    last_slots['week'] = "total"
-    last_slots['score'] = last_slots.apply(
-        lambda r: roster_scores[(r.user, r.roster_slot)], axis=1)
+    last_slots["week"] = "total"
+    last_slots["score"] = last_slots.apply(
+        lambda r: roster_scores[(r.user, r.roster_slot)], axis=1
+    )
     return last_slots
 
 
@@ -146,24 +152,28 @@ def df_to_json(df):
     df = pd.concat([df, total_slots_df])
     format_df_after_last_week(df)
     group_by_user_dict = {
-        week: sorted([
-            {
-                'user': user,
-                'roster': df_user.to_dict(orient='records'),
-                'week_score': str(df_user.score.sum()),
-            }
-            for user, df_user in df_week.groupby('user')],
-            key=lambda x: int(x['week_score']), reverse=True)
-        for week, df_week in df.groupby('week')
+        week: sorted(
+            [
+                {
+                    "user": user,
+                    "roster": df_user.to_dict(orient="records"),
+                    "week_score": str(df_user.score.sum()),
+                }
+                for user, df_user in df_week.groupby("user")
+            ],
+            key=lambda x: int(x["week_score"]),
+            reverse=True,
+        )
+        for week, df_week in df.groupby("week")
     }
-    return {'users': group_by_user_dict}
+    return {"users": group_by_user_dict}
 
 
 def convert_group_teams_to_df(all_teams):
 
     # create sorted list of users and their urls
     team_names = [x.a.text.replace("'s picks", "").lower() for x in all_teams]
-    team_links = [x.a.attrs['href'] for x in all_teams]
+    team_links = [x.a.attrs["href"] for x in all_teams]
     teams_sorted = sorted(list(zip(team_names, team_links)))
 
     # create list of all rosters
@@ -195,16 +205,16 @@ def scrape_group(group_id):
     filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
     df_all_rosters = convert_group_teams_to_df(filtered_teams)
     json_rosters = df_to_json(df_all_rosters)
-    response['response'] = json_rosters
+    response["response"] = json_rosters
     return response
 
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--group')
+    parser.add_argument("--group")
     args = parser.parse_args()
     scrape_group(args.group)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

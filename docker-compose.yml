@@ -22,7 +22,11 @@ services:
     volumes:
       - type: bind
         source: ./service
-        target: /service
+        target: /opt/service
+        consistency: cached
+      - type: bind
+        source: ./tests
+        target: /opt/tests
         consistency: cached
       - ${PWD}/poetry.lock:/opt/pysetup/poetry.lock
       - ${PWD}/pyproject.toml:/opt/pysetup/pyproject.toml
