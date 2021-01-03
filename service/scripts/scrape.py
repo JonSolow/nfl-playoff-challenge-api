@@ -152,8 +152,8 @@ def df_to_json(df):
                 'roster': df_user.to_dict(orient='records'),
                 'week_score': str(df_user.score.sum()),
             }
-            for user, df_user in df_week.groupby('user')]
-            , key=lambda x: int(x['week_score']), reverse=True)
+            for user, df_user in df_week.groupby('user')],
+            key=lambda x: int(x['week_score']), reverse=True)
         for week, df_week in df.groupby('week')
     }
     return {'users': group_by_user_dict}

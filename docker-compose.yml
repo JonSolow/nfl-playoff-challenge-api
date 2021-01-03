@@ -12,6 +12,7 @@ services:
       - PORT=${PORT}
 
   dev:
+    user: "${UID}:${GID}"
     build:
       context: .
       dockerfile: Dockerfile
@@ -23,4 +24,6 @@ services:
         source: ./service
         target: /service
         consistency: cached
+      - ${PWD}/poetry.lock:/opt/pysetup/poetry.lock
+      - ${PWD}/pyproject.toml:/opt/pysetup/pyproject.toml
 
