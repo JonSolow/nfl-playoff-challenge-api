@@ -72,4 +72,4 @@ ENV FASTAPI_ENV=production
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 COPY ./service /opt/service/
 WORKDIR /opt/service
-CMD gunicorn --bind 0.0.0.0:$PORT -w 2 --keep-alive 60 --preload app:app
+CMD gunicorn --bind 0.0.0.0:$PORT -w 1 --keep-alive 60 --preload app:app
