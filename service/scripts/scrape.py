@@ -5,7 +5,7 @@ import argparse
 import pandas as pd
 import multiprocessing
 
-import constants
+from scripts import constants
 
 from typing import List, Optional, Tuple, MutableMapping, Any
 
