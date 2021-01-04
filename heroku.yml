@@ -1,6 +1,4 @@
 build:
-  config:
-    DOCKER_BUILDKIT: 1
   docker:
     web: 
       dockerfile: Dockerfile
