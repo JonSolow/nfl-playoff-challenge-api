@@ -1,6 +1,7 @@
+from typing import List, Mapping
+
 # Team ID codes to short names
-TEAM_DICTIONARY = {
-    None: None,
+TEAM_DICTIONARY: Mapping[str, str] = {
     "2": "BAL",
     "3": "BUF",
     "11": "GB",
@@ -14,13 +15,13 @@ TEAM_DICTIONARY = {
     "30": "SEA",
 }
 
-BASE_URL = "https://playoffchallenge.fantasy.nfl.com"
+BASE_URL: str = "https://playoffchallenge.fantasy.nfl.com"
 
 # teams to remove
-REMOVE_LIST = []
+REMOVE_LIST: List[str] = []
 
 
-WEEK_REMAPPING = {
+WEEK_REMAPPING: Mapping[str, str] = {
     "1": "18",
     "2": "19",
     "3": "20",

@@ -1,14 +1,16 @@
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, element
 import requests
 import argparse
 
 import pandas as pd
 import multiprocessing
 
-from scripts import constants
+import constants
+
+from typing import List, Optional, Tuple, MutableMapping, Any
 
 
-def scrape_teams_group_page(url):
+def scrape_teams_group_page(url: str) -> List[Tuple[str, str]]:
     """Scrapes the teams from an NFL Playoff Challenge group
 
     Arguments:
@@ -22,10 +24,22 @@ def scrape_teams_group_page(url):
     page = requests.get(url)
     soup = BeautifulSoup(page.content, features="lxml")
     entry_list = soup.find_all("td", class_="groupEntryName")
-    return entry_list
+    entry_tuples = group_page_to_name_link_tuples(entry_list)
+    return entry_tuples
 
 
-def pagify_scrape_group(group_id):
+def group_page_to_name_link_tuples(
+    entry_list: element.ResultSet,
+) -> List[Tuple[str, str]]:
+    return sorted(
+        [
+            (x.get_text().replace("'s picks", "").lower(), x.a.attrs.get("href"))
+            for x in entry_list
+        ]
+    )
+
+
+def pagify_scrape_group(group_id: str) -> List[Tuple[str, str]]:
     """Pagify through each page of a group until all teams are added
 
     Arguments:
@@ -33,20 +47,20 @@ def pagify_scrape_group(group_id):
     """
     # pagify scrape until empty list returned
     all_teams = []
-    empty = False
-    offset = 0
+    empty: bool = False
+    offset: int = 0
     while not empty:
-        url = f"{constants.BASE_URL}/group/{group_id}?offset={offset}"
-        page = scrape_teams_group_page(url)
-        if len(page) == 0:
+        url: str = f"{constants.BASE_URL}/group/{group_id}?offset={offset}"
+        page_team_tuples = scrape_teams_group_page(url)
+        if len(page_team_tuples) == 0:
             empty = True
         # each page can have 16 teams
         offset += 16
-        all_teams.extend(page)
+        all_teams.extend(page_team_tuples)
     return all_teams
 
 
-def scrape_team(url_suffix):
+def scrape_team(url_suffix: str) -> element.ResultSet:
     """Scrapes the roster in list of bs4 elements
 
     Arguments:
@@ -64,7 +78,7 @@ def scrape_team(url_suffix):
     return roster_slots
 
 
-def parse_roster_slot(slot):
+def parse_roster_slot(slot: element.Tag) -> MutableMapping[str, Optional[str]]:
     slot_attrs = slot.div.attrs
     slot_id = slot_attrs.get("id")
     if not slot_id:
@@ -101,7 +115,7 @@ def parse_roster_slot(slot):
     }
 
 
-def parse_roster(team):
+def parse_roster(team: Tuple) -> List[MutableMapping[str, Optional[str]]]:
     user, url_suffix = team
     roster = scrape_team(url_suffix)
     roster_parsed = []
@@ -114,16 +128,16 @@ def parse_roster(team):
     return roster_parsed
 
 
-def remap_weeks(df):
+def remap_weeks(df: pd.DataFrame) -> None:
     df["week"].replace(to_replace=constants.WEEK_REMAPPING, inplace=True)
 
 
-def format_df(df):
+def format_df(df: pd.DataFrame) -> None:
     df["score"] = df["score"].apply(int)
     df["user_score"] = df.groupby("user").score.transform(sum)
 
 
-def format_df_after_last_week(df):
+def format_df_after_last_week(df: pd.DataFrame) -> None:
     df["week_score"] = df.groupby(["user", "week"]).score.transform(sum)
     df["img_url"] = df["player_img"].apply(lambda x: f"{constants.BASE_URL}{x}")
     df.drop(columns=["player_img"], inplace=True)
@@ -131,7 +145,7 @@ def format_df_after_last_week(df):
     df = df.astype(str)
 
 
-def create_total_week_df(df):
+def create_total_week_df(df: pd.DataFrame) -> pd.DataFrame:
     exclude_future_unrevealed = df[
         ((df.player_name != " ") | (df.week == df.week.min()))
     ]
@@ -169,16 +183,15 @@ def df_to_json(df):
     return {"users": group_by_user_dict}
 
 
-def convert_group_teams_to_df(all_teams):
-
-    # create sorted list of users and their urls
-    team_names = [x.a.text.replace("'s picks", "").lower() for x in all_teams]
-    team_links = [x.a.attrs["href"] for x in all_teams]
-    teams_sorted = sorted(list(zip(team_names, team_links)))
+def convert_group_teams_to_df(teams_sorted: List[Tuple[str, str]]):
 
     # create list of all rosters
-    with multiprocessing.Pool() as p:
-        all_rosters = p.map(parse_roster, teams_sorted)
+    use_multiprocessing = False
+    if use_multiprocessing:
+        with multiprocessing.Pool() as p:
+            all_rosters = p.map(parse_roster, teams_sorted)
+    else:
+        all_rosters = [parse_roster(t) for t in teams_sorted]
 
     # convert to pandas and save to df
     flat_all_rosters = [item for sublist in all_rosters for item in sublist]
@@ -186,11 +199,13 @@ def convert_group_teams_to_df(all_teams):
     return df_all_rosters
 
 
-def remove_non_participants(all_teams, remove_list):
-    return [x for x in all_teams if x.text not in remove_list]
+def remove_non_participants(
+    all_teams: List[Tuple[str, str]], remove_list: List
+) -> List[Tuple[str, str]]:
+    return [x for x in all_teams if x[0] not in remove_list]
 
 
-def scrape_group(group_id):
+def scrape_group(group_id: str):
     response = {}
     if not group_id:
         response["ERROR"] = "no group found, please send a group."

@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 from flask_caching import Cache
 from flask_cors import CORS, cross_origin
-from scripts.scrape import scrape_group
+from service.scripts.scrape import scrape_group
 import os
 
 
