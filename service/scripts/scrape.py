@@ -31,12 +31,10 @@ def scrape_teams_group_page(url: str) -> List[Tuple[str, str]]:
 def group_page_to_name_link_tuples(
     entry_list: element.ResultSet,
 ) -> List[Tuple[str, str]]:
-    return sorted(
-        [
-            (x.get_text().replace("'s picks", "").lower(), x.a.attrs.get("href"))
-            for x in entry_list
-        ]
-    )
+    return [
+        (x.get_text().replace("'s picks", "").lower(), x.a.attrs.get("href"))
+        for x in entry_list
+    ]
 
 
 def pagify_scrape_group(group_id: str) -> List[Tuple[str, str]]:
@@ -57,7 +55,7 @@ def pagify_scrape_group(group_id: str) -> List[Tuple[str, str]]:
         # each page can have 16 teams
         offset += 16
         all_teams.extend(page_team_tuples)
-    return all_teams
+    return sorted(all_teams, key=lambda x: x[0])
 
 
 def scrape_team(url_suffix: str) -> element.ResultSet:
@@ -74,58 +72,76 @@ def scrape_team(url_suffix: str) -> element.ResultSet:
     url = url_prefix + url_suffix
     page = requests.get(url)
     soup = BeautifulSoup(page.content, features="lxml")
-    roster_slots = soup.find_all("li", class_="roster-slot")
-    return roster_slots
+    roster_slots = soup.find_all("div", class_="player")
+    parsed_roster_slots = [parse_roster_slot(s) for s in roster_slots]
+    return parsed_roster_slots
+
+
+def replace_if_none(
+    value: Any, default_replace: Optional[Any] = None, lambda_fxn=lambda x: x
+):
+    return lambda_fxn(value) if value else default_replace
+
+
+def player_dict_from_slot_id(slot: element.Tag) -> MutableMapping[str, Optional[str]]:
+    slot_id = slot.get("id", "--")
+    _, week, roster_slot = slot_id.rsplit("-", 2)
+    return {
+        "week": week,
+        "roster_slot": roster_slot,
+    }
+
+
+def player_dict_from_slot_attrs(
+    slot: element.Tag,
+) -> MutableMapping[str, Optional[str]]:
+    team_id = slot.get("data-sport-team-id")
+    position = slot.get("data-player-position")
+    multiplier = slot.get("data-player-multiplier")
+    return {
+        "position": position,
+        "multiplier": multiplier,
+        "team": team_id,
+    }
+
+
+def player_dict_from_finds(slot: element.Tag) -> MutableMapping[str, Optional[str]]:
+    player_first_name = replace_if_none(
+        slot.find("span", class_="first-name"), "", lambda x: x.text
+    )
+    player_last_name = replace_if_none(
+        slot.find("span", class_="last-name"), "", lambda x: x.text
+    )
+
+    player_name = " ".join([player_first_name, player_last_name])
+    score = replace_if_none(
+        slot.find("span", class_="display pts player-pts"), "0", lambda x: x.em.text
+    )
+    player_img = slot.find("img", class_="player-img").attrs.get("src")
+    return {
+        "player_name": player_name,
+        "score": score,
+        "player_img": player_img,
+    }
 
 
 def parse_roster_slot(slot: element.Tag) -> MutableMapping[str, Optional[str]]:
-    slot_attrs = slot.div.attrs
-    slot_id = slot_attrs.get("id")
-    if not slot_id:
-        return {}
-
-    player_first_name = (
-        slot.find("span", class_="first-name").text
-        if slot.find("span", class_="first-name")
-        else ""
-    )
-
-    player_last_name = (
-        slot.find("span", class_="last-name").text
-        if slot.find("span", class_="first-name")
-        else ""
-    )
-
-    score = (
-        slot.find("span", class_="display pts player-pts").em.text
-        if slot.find("span", class_="display pts player-pts")
-        else "0"
-    )
-
-    team_id = slot_attrs.get("data-sport-team-id")
-    return {
-        "player_name": " ".join([player_first_name, player_last_name]),
-        "position": slot_attrs.get("data-player-position"),
-        "week": slot_id.rsplit("-", 2)[-2],
-        "roster_slot": slot_id.rsplit("-", 1)[-1],
-        "multiplier": slot_attrs.get("data-player-multiplier"),
-        "team": team_id,
-        "score": score,
-        "player_img": slot.find("img", class_="player-img").attrs.get("src"),
-    }
+    player_dict = player_dict_from_slot_id(slot)
+    player_dict.update(player_dict_from_slot_attrs(slot))
+    player_dict.update(player_dict_from_finds(slot))
+    return player_dict
 
 
 def parse_roster(team: Tuple) -> List[MutableMapping[str, Optional[str]]]:
     user, url_suffix = team
     roster = scrape_team(url_suffix)
-    roster_parsed = []
-    for slot in roster:
-        slot_dict = parse_roster_slot(slot)
-        if not slot_dict:
+    roster_with_user = []
+    for roster_slot_dict in roster:
+        if not roster_slot_dict:
             continue
-        slot_dict.update({"user": user})
-        roster_parsed.append(slot_dict)
-    return roster_parsed
+        roster_slot_dict.update({"user": user})
+        roster_with_user.append(roster_slot_dict)
+    return roster_with_user
 
 
 def remap_weeks(df: pd.DataFrame) -> None:
