@@ -25,7 +25,10 @@ ENV PYTHONUNBUFFERED=1 \
     # paths
     # this is where our requirements + virtual environment will live
     PYSETUP_PATH="/opt/pysetup" \
-    VENV_PATH="/opt/pysetup/.venv"
+    VENV_PATH="/opt/pysetup/.venv" \
+    \
+    PYTHONPATH="/opt/service/"
+    
 
 
 # prepend poetry and venv to path
@@ -48,7 +51,6 @@ RUN poetry install --no-dev
 
 # `development` image is used during development / testing
 FROM python-base as development
-ENV FASTAPI_ENV=development
 WORKDIR $PYSETUP_PATH
 
 # copy in our built poetry + venv
@@ -59,16 +61,16 @@ COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 RUN poetry install
 
 # will become mountpoint of our code
-COPY ./service /service/
-WORKDIR /service
+COPY ./service /opt/service/
+COPY ./tests /opt/tests/
+WORKDIR /opt/service
 
 CMD tail -f /dev/null
 
 
 # `production` image used for runtime
 FROM python-base as production
-ENV FASTAPI_ENV=production
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
-COPY ./service /service/
-WORKDIR /service
+COPY ./service /opt/service/
+WORKDIR /opt/service
 CMD gunicorn --bind 0.0.0.0:$PORT -w 1 --keep-alive 60 --preload app:app
