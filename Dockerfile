@@ -48,7 +48,6 @@ RUN poetry install --no-dev
 
 # `development` image is used during development / testing
 FROM python-base as development
-ENV FASTAPI_ENV=development
 WORKDIR $PYSETUP_PATH
 
 # copy in our built poetry + venv
@@ -68,7 +67,6 @@ CMD tail -f /dev/null
 
 # `production` image used for runtime
 FROM python-base as production
-ENV FASTAPI_ENV=production
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 COPY ./service /opt/service/
 WORKDIR /opt/service
