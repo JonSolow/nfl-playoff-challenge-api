@@ -155,7 +155,7 @@ def format_df(df: pd.DataFrame) -> None:
 
 def format_df_after_last_week(df: pd.DataFrame) -> None:
     df["week_score"] = df.groupby(["user", "week"]).score.transform(sum)
-    df["img_url"] = df["player_img"].apply(lambda x: f"{constants.BASE_URL}{x}")
+    df["img_url"] = df["player_img"] #.apply(lambda x: f"{constants.BASE_URL}{x}")
     df.drop(columns=["player_img"], inplace=True)
     df["team"] = df["team"].apply(lambda x: constants.TEAM_DICTIONARY.get(x, x))
     df = df.astype(str)
