@@ -13,6 +13,7 @@ TEAM_DICTIONARY: Mapping[str, str] = {
     "22": "NO",
     "29": "SF",
     "30": "SEA",
+    "31": "TB",
 }
 
 BASE_URL: str = "https://playoffchallenge.fantasy.nfl.com"
