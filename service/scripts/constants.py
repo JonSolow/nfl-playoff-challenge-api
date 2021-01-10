@@ -4,6 +4,7 @@ from typing import List, Mapping
 TEAM_DICTIONARY: Mapping[str, str] = {
     "2": "BAL",
     "3": "BUF",
+    "7": "CLE",
     "11": "GB",
     "12": "TEN",
     "13": "HOU",
@@ -11,6 +12,7 @@ TEAM_DICTIONARY: Mapping[str, str] = {
     "20": "MIN",
     "21": "NE",
     "22": "NO",
+    "27": "PIT",
     "29": "SF",
     "30": "SEA",
     "31": "TB",
