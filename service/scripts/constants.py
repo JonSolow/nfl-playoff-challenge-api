@@ -22,11 +22,3 @@ BASE_URL: str = "https://playoffchallenge.fantasy.nfl.com"
 
 # teams to remove
 REMOVE_LIST: List[str] = []
-
-
-WEEK_REMAPPING: Mapping[str, str] = {
-    "1": "18",
-    "2": "19",
-    "3": "20",
-    "4": "22",
-}

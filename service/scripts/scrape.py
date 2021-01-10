@@ -146,9 +146,6 @@ def parse_roster(team: Tuple) -> List[MutableMapping[str, Optional[str]]]:
     return roster_with_user
 
 
-def remap_weeks(df: pd.DataFrame) -> None:
-    df["week"].replace(to_replace=constants.WEEK_REMAPPING, inplace=True)
-
 
 def format_df(df: pd.DataFrame) -> None:
     df["score"] = df["score"].apply(int)
@@ -187,7 +184,6 @@ def create_total_week_df(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def df_to_json(df):
-    remap_weeks(df)
     format_df(df)
     total_slots_df = create_total_week_df(df)
     df = pd.concat([df, total_slots_df])
@@ -232,11 +228,6 @@ def remove_non_participants(
     return [x for x in all_teams if x[0] not in remove_list]
 
 
-def hack_in_weeks_1_4_temp(initial_json):
-    for new_key, old_key in constants.WEEK_REMAPPING.items():
-        initial_json["users"][new_key] = initial_json["users"][old_key]
-
-
 def scrape_group(group_id: str):
     response = {}
     if not group_id:
@@ -252,7 +243,6 @@ def scrape_group(group_id: str):
     filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
     df_all_rosters = convert_group_teams_to_df(filtered_teams)
     json_rosters = df_to_json(df_all_rosters)
-    hack_in_weeks_1_4_temp(json_rosters)
     response["response"] = json_rosters
     return response
 
