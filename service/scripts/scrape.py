@@ -86,9 +86,11 @@ def replace_if_none(
 def player_dict_from_slot_id(slot: element.Tag) -> MutableMapping[str, Optional[str]]:
     slot_id = slot.get("id", "--")
     _, week, roster_slot = slot_id.rsplit("-", 2)
+    data_player_id = slot.get("data-player-id", "")
     return {
         "week": week,
         "roster_slot": roster_slot,
+        "data-player-id": data_player_id,
     }
 
 
@@ -230,6 +232,11 @@ def remove_non_participants(
     return [x for x in all_teams if x[0] not in remove_list]
 
 
+def hack_in_weeks_1_4_temp(initial_json):
+    for new_key, old_key in constants.WEEK_REMAPPING.items():
+        initial_json["users"][new_key] = initial_json["users"][old_key]
+
+
 def scrape_group(group_id: str):
     response = {}
     if not group_id:
@@ -245,6 +252,7 @@ def scrape_group(group_id: str):
     filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
     df_all_rosters = convert_group_teams_to_df(filtered_teams)
     json_rosters = df_to_json(df_all_rosters)
+    hack_in_weeks_1_4_temp(json_rosters)
     response["response"] = json_rosters
     return response
 
