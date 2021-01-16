@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup, element
 import requests
 import argparse
 
+import time
 import pandas as pd
 import multiprocessing
 
@@ -228,8 +229,14 @@ def remove_non_participants(
     return [x for x in all_teams if x[0] not in remove_list]
 
 
+def generate_timpestamp() -> MutableMapping[str, float]:
+    current_time = time.time()
+    return {"timestamp": current_time}
+
+
 def scrape_group(group_id: str):
     response = {}
+    response.update(generate_timpestamp())
     if not group_id:
         response["ERROR"] = "no group found, please send a group."
         return response
