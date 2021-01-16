@@ -176,7 +176,7 @@ def create_total_week_df(df: pd.DataFrame) -> pd.DataFrame:
     grouped_by_position = exclude_future_unrevealed.groupby(["user", "roster_slot"])
     roster_scores = grouped_by_position.score.apply(sum).to_dict()
     last_slots = grouped_by_position.tail(1)
-    last_slots["week"] = "total"
+    last_slots.loc[:, "week"] = "total"
     last_slots["score"] = last_slots.apply(
         lambda r: roster_scores[(r.user, r.roster_slot)], axis=1
     )
