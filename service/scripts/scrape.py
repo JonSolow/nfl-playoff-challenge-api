@@ -235,6 +235,24 @@ def generate_timpestamp() -> MutableMapping[str, float]:
     return {"timestamp": current_time}
 
 
+def remap_team_names_for_game_dict(game_dict):
+    for key in ["homeTeamId", "awayTeamId"]:
+        team_id = str(game_dict[key])
+        game_dict[key] = constants.TEAM_DICTIONARY.get(team_id, team_id)
+
+
+def parse_games_from_week(week_dict):
+    parsed_games = {}
+    games_dict = week_dict["nflGames"]
+    if not isinstance(games_dict, dict):
+        return {}
+    for game in games_dict.values():
+        remap_team_names_for_game_dict(game)
+        parsed_games[game["homeTeamId"]] = game
+        parsed_games[game["awayTeamId"]] = game
+    return parsed_games
+
+
 def parse_week_stats(week: str):
     url = f"{constants.BASE_URL}/players/weekstats?week={week}&season={constants.CURRENT_SEASON}"
     resp = requests.get(url)
@@ -244,7 +262,8 @@ def parse_week_stats(week: str):
         for k, v in week_dict["players"].items()
         if isinstance(v["stats"], dict)
     }
-    return player_stats_dict, {}
+    team_games_dict = parse_games_from_week(week_dict)
+    return player_stats_dict, team_games_dict
 
 
 def assemble_all_week_stats() -> MutableMapping[str, MutableMapping[Any, Any]]:
