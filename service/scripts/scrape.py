@@ -253,12 +253,16 @@ def parse_games_from_week(week_dict):
     return parsed_games
 
 
+def translate_stat_keys(stat_dict: MutableMapping[Any, Any]) -> MutableMapping[Any, Any]:
+    return {constants.STAT_KEY_MAP.get(k, k): v for k,v in stat_dict.items()}
+
+
 def parse_week_stats(week: str):
     url = f"{constants.BASE_URL}/players/weekstats?week={week}&season={constants.CURRENT_SEASON}"
     resp = requests.get(url)
     week_dict = json.loads(resp.content)
     player_stats_dict = {
-        k: v["stats"]
+        k: translate_stat_keys(v["stats"])
         for k, v in week_dict["players"].items()
         if isinstance(v["stats"], dict)
     }

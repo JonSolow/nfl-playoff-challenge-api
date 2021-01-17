@@ -29,3 +29,18 @@ REMOVE_LIST: List[str] = []
 
 
 CURRENT_SEASON: str = "2020"
+
+STAT_KEY_MAP: Mapping[str, str] = {
+    "5": "PYd",
+    "6": "PTD",
+    "7": "INT",
+    "14": "RuYd",
+    "15": "RuTD",
+    "21": "ReYd",
+    "22": "ReTD",
+    "30": "Fum",
+    "45": "Sack",
+    "46": "DefINT", # int or td
+    "50": "DefTD", # int or td
+    "54": "PtsAllow",
+}
