@@ -41,6 +41,7 @@ STAT_KEY_MAP: Mapping[str, str] = {
     "30": "Fum",
     "45": "Sack",
     "46": "DefINT",
+    "47": "DefFum",
     "50": "DefTD",
     "54": "PtsAllow",
 }
