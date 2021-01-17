@@ -147,7 +147,6 @@ def parse_roster(team: Tuple) -> List[MutableMapping[str, Optional[str]]]:
     return roster_with_user
 
 
-
 def format_df(df: pd.DataFrame) -> None:
     df["score"] = df["score"].apply(int)
     df["user_score"] = df.groupby("user").score.transform(sum)
@@ -157,10 +156,11 @@ def format_player_img_url(player_img: str) -> str:
     # some img paths are relative and some are explicit
     if len(player_img) < 4:
         return player_img
-    elif player_img[:4] == 'http':
+    elif player_img[:4] == "http":
         return player_img
     else:
         return f"{constants.BASE_URL}{player_img}"
+
 
 def format_df_after_last_week(df: pd.DataFrame) -> None:
     df["week_score"] = df.groupby(["user", "week"]).score.transform(sum)
@@ -235,7 +235,7 @@ def generate_timpestamp() -> MutableMapping[str, float]:
 
 
 def scrape_group(group_id: str):
-    response = {}
+    response: MutableMapping[str, Any] = {}
     response.update(generate_timpestamp())
     if not group_id:
         response["ERROR"] = "no group found, please send a group."
