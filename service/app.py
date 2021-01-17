@@ -19,7 +19,7 @@ app.config.from_mapping(config)
 cache = Cache(app)
 
 
-@cache.memoize(timeout=120)
+@cache.memoize(timeout=90)
 def cached_scrape_group(group_id):
     print(f"external call for : {group_id}")
     return jsonify(scrape_group(group_id))
