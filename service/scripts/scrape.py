@@ -271,7 +271,7 @@ def assemble_all_week_stats() -> MutableMapping[str, MutableMapping[Any, Any]]:
     stats_dict: MutableMapping = {}
     for week in weeks:
         stats_dict[week] = {}
-        stats_dict[week]["stats"], stats_dict[week]["games"] = parse_week_stats(week)
+        stats_dict[week]["stats"], stats_dict[week]["team_games"] = parse_week_stats(week)
     return stats_dict
 
 
