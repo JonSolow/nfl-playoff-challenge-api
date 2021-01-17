@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup, element
 import requests
 import argparse
 
+import json
 import time
 import pandas as pd
 import multiprocessing
@@ -234,6 +235,27 @@ def generate_timpestamp() -> MutableMapping[str, float]:
     return {"timestamp": current_time}
 
 
+def parse_week_stats(week: str):
+    url = f"{constants.BASE_URL}/players/weekstats?week={week}&season={constants.CURRENT_SEASON}"
+    resp = requests.get(url)
+    week_dict = json.loads(resp.content)
+    player_stats_dict = {
+        k: v["stats"]
+        for k, v in week_dict["players"].items()
+        if isinstance(v["stats"], dict)
+    }
+    return player_stats_dict, {}
+
+
+def assemble_all_week_stats() -> MutableMapping[str, MutableMapping[Any, Any]]:
+    weeks = map(str, range(1, 5))
+    stats_dict: MutableMapping = {}
+    for week in weeks:
+        stats_dict[week] = {}
+        stats_dict[week]["stats"], stats_dict[week]["games"] = parse_week_stats(week)
+    return stats_dict
+
+
 def scrape_group(group_id: str):
     response: MutableMapping[str, Any] = {}
     response.update(generate_timpestamp())
@@ -250,6 +272,7 @@ def scrape_group(group_id: str):
     filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
     df_all_rosters = convert_group_teams_to_df(filtered_teams)
     json_rosters = df_to_json(df_all_rosters)
+    json_rosters.update({"week_stats": assemble_all_week_stats()})
     response["response"] = json_rosters
     return response
 

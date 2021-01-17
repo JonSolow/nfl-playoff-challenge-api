@@ -22,3 +22,6 @@ BASE_URL: str = "https://playoffchallenge.fantasy.nfl.com"
 
 # teams to remove
 REMOVE_LIST: List[str] = []
+
+
+CURRENT_SEASON: str = "2020"
