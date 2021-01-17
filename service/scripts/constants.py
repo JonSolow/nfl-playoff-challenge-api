@@ -40,7 +40,7 @@ STAT_KEY_MAP: Mapping[str, str] = {
     "22": "ReTD",
     "30": "Fum",
     "45": "Sack",
-    "46": "DefINT", # int or td
-    "50": "DefTD", # int or td
+    "46": "DefINT",
+    "50": "DefTD",
     "54": "PtsAllow",
 }
