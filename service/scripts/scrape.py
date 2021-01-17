@@ -241,15 +241,32 @@ def remap_team_names_for_game_dict(game_dict):
         game_dict[key] = constants.TEAM_DICTIONARY.get(team_id, team_id)
 
 
+def insert_winning_team_key(game_dict):
+    if game_dict["status"] == "game_closed":
+        # determine higher score and assign winning team id
+        if game_dict["homeScore"] > game_dict["awayScore"]:
+            game_dict["winTeamId"] = game_dict["homeTeamId"]
+        else:
+            game_dict["winTeamId"] = game_dict["awayTeamId"]
+    else:
+        game_dict["winTeamId"] = ""
+
+
 def parse_games_from_week(week_dict):
+    """Make a dictionary where keys are team names and values are game dicts"""
     parsed_games = {}
     games_dict = week_dict["nflGames"]
     if not isinstance(games_dict, dict):
         return {}
     for game in games_dict.values():
         remap_team_names_for_game_dict(game)
-        parsed_games[game["homeTeamId"]] = game
-        parsed_games[game["awayTeamId"]] = game
+        insert_winning_team_key(game)
+        for key in ["homeTeamId", "awayTeamId"]:
+            parsed_games[game[key]] = {
+                **game,
+                **{"win": game[key] == game["winTeamId"]},
+            }
+
     return parsed_games
 
 
@@ -271,7 +288,9 @@ def assemble_all_week_stats() -> MutableMapping[str, MutableMapping[Any, Any]]:
     stats_dict: MutableMapping = {}
     for week in weeks:
         stats_dict[week] = {}
-        stats_dict[week]["stats"], stats_dict[week]["team_games"] = parse_week_stats(week)
+        stats_dict[week]["stats"], stats_dict[week]["team_games"] = parse_week_stats(
+            week
+        )
     return stats_dict
 
 
