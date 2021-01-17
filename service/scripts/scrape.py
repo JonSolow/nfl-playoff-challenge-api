@@ -92,7 +92,7 @@ def player_dict_from_slot_id(slot: element.Tag) -> MutableMapping[str, Optional[
     return {
         "week": week,
         "roster_slot": roster_slot,
-        "data-player-id": data_player_id,
+        "player_id": data_player_id,
     }
 
 
