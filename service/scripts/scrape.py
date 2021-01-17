@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup, element
 import requests
 import argparse
 
+import time
 import pandas as pd
 import multiprocessing
 
@@ -176,7 +177,7 @@ def create_total_week_df(df: pd.DataFrame) -> pd.DataFrame:
     grouped_by_position = exclude_future_unrevealed.groupby(["user", "roster_slot"])
     roster_scores = grouped_by_position.score.apply(sum).to_dict()
     last_slots = grouped_by_position.tail(1)
-    last_slots["week"] = "total"
+    last_slots.loc[:, "week"] = "total"
     last_slots["score"] = last_slots.apply(
         lambda r: roster_scores[(r.user, r.roster_slot)], axis=1
     )
@@ -228,8 +229,14 @@ def remove_non_participants(
     return [x for x in all_teams if x[0] not in remove_list]
 
 
+def generate_timpestamp() -> MutableMapping[str, float]:
+    current_time = time.time()
+    return {"timestamp": current_time}
+
+
 def scrape_group(group_id: str):
     response = {}
+    response.update(generate_timpestamp())
     if not group_id:
         response["ERROR"] = "no group found, please send a group."
         return response
