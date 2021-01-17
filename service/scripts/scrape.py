@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup, element
 import requests
 import argparse
 
+import json
 import time
 import pandas as pd
 import multiprocessing
@@ -147,7 +148,6 @@ def parse_roster(team: Tuple) -> List[MutableMapping[str, Optional[str]]]:
     return roster_with_user
 
 
-
 def format_df(df: pd.DataFrame) -> None:
     df["score"] = df["score"].apply(int)
     df["user_score"] = df.groupby("user").score.transform(sum)
@@ -157,10 +157,11 @@ def format_player_img_url(player_img: str) -> str:
     # some img paths are relative and some are explicit
     if len(player_img) < 4:
         return player_img
-    elif player_img[:4] == 'http':
+    elif player_img[:4] == "http":
         return player_img
     else:
         return f"{constants.BASE_URL}{player_img}"
+
 
 def format_df_after_last_week(df: pd.DataFrame) -> None:
     df["week_score"] = df.groupby(["user", "week"]).score.transform(sum)
@@ -234,8 +235,48 @@ def generate_timpestamp() -> MutableMapping[str, float]:
     return {"timestamp": current_time}
 
 
+def remap_team_names_for_game_dict(game_dict):
+    for key in ["homeTeamId", "awayTeamId"]:
+        team_id = str(game_dict[key])
+        game_dict[key] = constants.TEAM_DICTIONARY.get(team_id, team_id)
+
+
+def parse_games_from_week(week_dict):
+    parsed_games = {}
+    games_dict = week_dict["nflGames"]
+    if not isinstance(games_dict, dict):
+        return {}
+    for game in games_dict.values():
+        remap_team_names_for_game_dict(game)
+        parsed_games[game["homeTeamId"]] = game
+        parsed_games[game["awayTeamId"]] = game
+    return parsed_games
+
+
+def parse_week_stats(week: str):
+    url = f"{constants.BASE_URL}/players/weekstats?week={week}&season={constants.CURRENT_SEASON}"
+    resp = requests.get(url)
+    week_dict = json.loads(resp.content)
+    player_stats_dict = {
+        k: v["stats"]
+        for k, v in week_dict["players"].items()
+        if isinstance(v["stats"], dict)
+    }
+    team_games_dict = parse_games_from_week(week_dict)
+    return player_stats_dict, team_games_dict
+
+
+def assemble_all_week_stats() -> MutableMapping[str, MutableMapping[Any, Any]]:
+    weeks = map(str, range(1, 5))
+    stats_dict: MutableMapping = {}
+    for week in weeks:
+        stats_dict[week] = {}
+        stats_dict[week]["stats"], stats_dict[week]["team_games"] = parse_week_stats(week)
+    return stats_dict
+
+
 def scrape_group(group_id: str):
-    response = {}
+    response: MutableMapping[str, Any] = {}
     response.update(generate_timpestamp())
     if not group_id:
         response["ERROR"] = "no group found, please send a group."
@@ -250,6 +291,7 @@ def scrape_group(group_id: str):
     filtered_teams = remove_non_participants(all_teams, constants.REMOVE_LIST)
     df_all_rosters = convert_group_teams_to_df(filtered_teams)
     json_rosters = df_to_json(df_all_rosters)
+    json_rosters.update({"week_stats": assemble_all_week_stats()})
     response["response"] = json_rosters
     return response
 
